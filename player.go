@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -21,12 +22,31 @@ import (
 
 // Player : connected player's informations
 type Player struct {
-	username string
-	token    uint64
-	state    []byte
-	arena    *Arena
-	conn     *websocket.Conn
-	//team *Team
+	uid   uint32
+	state []byte
+	arena *Arena
+	conn  *websocket.Conn
+	send  chan []byte
+}
+
+func (p *Player) sendPlayersList() {
+
+	playersCount := uint16(len(p.arena.players))
+
+	message := make([]byte, 1+2+playersCount*4)
+
+	binary.LittleEndian.PutUint16(message[1:], playersCount)
+
+	message[0] = 0x4
+
+	offset := 0
+
+	for k := range p.arena.players {
+		binary.LittleEndian.PutUint32(message[1+2+offset:], k.uid)
+		offset += 4
+	}
+
+	p.send <- message
 }
 
 func (p *Player) readPump() {
@@ -52,10 +72,34 @@ func (p *Player) readPump() {
 		}
 
 		if len(message) > 0 {
-			if message[0] == 0x3 {
+			if message[0] == 0x3 { // Plane's state update
 				p.arena.state <- message
 			}
 		}
 
+	}
+}
+
+func (p *Player) writePump() {
+
+	defer func() {
+		p.conn.Close()
+	}()
+
+	for {
+		select {
+		case message := <-p.send:
+
+			w, err := p.conn.NextWriter(websocket.BinaryMessage)
+			if err != nil {
+				return
+			}
+
+			w.Write(message)
+
+			if err := w.Close(); err != nil {
+				return
+			}
+		}
 	}
 }
