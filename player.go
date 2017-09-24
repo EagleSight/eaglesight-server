@@ -35,14 +35,14 @@ func (p *Player) sendPlayersList() {
 
 	message := make([]byte, 1+2+playersCount*4)
 
-	binary.LittleEndian.PutUint16(message[1:], playersCount)
+	binary.BigEndian.PutUint16(message[1:], playersCount)
 
 	message[0] = 0x4
 
 	offset := 0
 
 	for k := range p.arena.players {
-		binary.LittleEndian.PutUint32(message[1+2+offset:], k.uid)
+		binary.BigEndian.PutUint32(message[1+2+offset:], k.uid)
 		offset += 4
 	}
 
