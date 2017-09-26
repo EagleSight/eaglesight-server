@@ -11,8 +11,8 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  128,
+	WriteBufferSize: 2048,
 }
 
 func extractUID(query string) (uid uint64, err error) {
@@ -50,6 +50,7 @@ func ws(arena *Arena, w http.ResponseWriter, r *http.Request) {
 		conn:  conn,
 		uid:   uint32(uid),
 		send:  make(chan []byte, 16),
+		plane: NewPlane(uint32(uid)),
 	}
 
 	go player.readPump()
@@ -68,6 +69,6 @@ func main() {
 
 	go arena.Run()
 
-	http.ListenAndServe("127.0.0.1:8000", nil)
+	http.ListenAndServe("0.0.0.0:8000", nil)
 
 }

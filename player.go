@@ -7,42 +7,35 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// type Vector3D struct {
-// 	x, y, z float64
-// }
-
-//
-// type PlayerState struct {
-// 	livesLeft           int8
-// 	location, rotation  Vector3D
-// 	localAcceleration   Vector3D
-// 	angularAcceleration Vector3D
-// 	isOut, isFiring     bool
-// }
+// PlayerInput : change to apply on a player's plane
+type PlayerInput struct {
+	plane *Plane
+	data  []byte
+}
 
 // Player : connected player's informations
 type Player struct {
 	uid   uint32
-	state []byte
+	input []byte
 	arena *Arena
 	conn  *websocket.Conn
 	send  chan []byte
+	plane *Plane
 }
 
 func (p *Player) sendPlayersList() {
 
-	playersCount := uint16(len(p.arena.players))
+	playersCount := len(p.arena.players)
 
-	message := make([]byte, 1+2+playersCount*4)
+	offset := 1 + 2
 
-	binary.BigEndian.PutUint16(message[1:], playersCount)
+	message := make([]byte, offset+playersCount*4)
 
 	message[0] = 0x4
-
-	offset := 0
+	binary.BigEndian.PutUint16(message[1:], uint16(playersCount))
 
 	for k := range p.arena.players {
-		binary.BigEndian.PutUint32(message[1+2+offset:], k.uid)
+		binary.BigEndian.PutUint32(message[offset:], k.uid)
 		offset += 4
 	}
 
@@ -52,15 +45,11 @@ func (p *Player) sendPlayersList() {
 func (p *Player) readPump() {
 
 	defer func() {
-		p.arena.unregister <- p
+		p.arena.deconect <- p
 		p.conn.Close()
 	}()
 
-	p.arena.register <- p
-
-	// c.conn.SetReadLimit(maxMessageSize)
-	// c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	// c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	p.arena.connect <- p
 
 	for {
 		_, message, err := p.conn.ReadMessage()
@@ -71,10 +60,8 @@ func (p *Player) readPump() {
 			break
 		}
 
-		if len(message) > 0 {
-			if message[0] == 0x3 { // Plane's state update
-				p.arena.state <- message
-			}
+		if message[0] == 0x3 { // Plane's state update
+			p.arena.input <- &PlayerInput{plane: p.plane, data: message}
 		}
 
 	}
@@ -83,6 +70,7 @@ func (p *Player) readPump() {
 func (p *Player) writePump() {
 
 	defer func() {
+		p.arena.deconect <- p
 		p.conn.Close()
 	}()
 

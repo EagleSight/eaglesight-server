@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"sync"
 	"time"
@@ -13,76 +14,76 @@ const (
 
 // Arena riens
 type Arena struct {
-	players    map[*Player]bool
-	register   chan *Player
-	unregister chan *Player
-	state      chan []byte
-	updates    map[uint32][]byte
-	mux        sync.Mutex
+	players        map[*Player]bool
+	connect        chan *Player
+	deconect       chan *Player
+	input          chan *PlayerInput
+	snapshotInputs map[uint32]*PlayerInput
+	tick           uint32
+	mux            sync.Mutex
 }
 
-func (a *Arena) broadcastStates() {
+func (a *Arena) broadcastSnapshots() {
 
-	c := time.Tick(time.Second / 30)
+	c := time.Tick(time.Second / 60)
 
-	for range c {
+	snapshotBuffer := new(bytes.Buffer)
 
-		// We lock the mutex because we want to make sure that nobody else append a state while the updatesPacket is made
+	for now := range c {
+
+		a.tick++
+
+		// We lock the mutex because we want to make sure that nobody else append a state while the inputsPacket is made
 		a.mux.Lock()
 
-		if len(a.updates) > 0 {
+		binary.Write(snapshotBuffer, binary.BigEndian, uint8(0x3))
+		binary.Write(snapshotBuffer, binary.BigEndian, uint32(a.tick))
+		binary.Write(snapshotBuffer, binary.BigEndian, uint16(len(a.snapshotInputs)))
 
-			updatePacket := make([]byte, 3) // uint8-instruction|uint16-update count
+		for k, v := range a.snapshotInputs {
 
-			updatePacket[0] = 0x3
-			binary.BigEndian.PutUint16(updatePacket[1:3], uint16(len(a.updates)))
+			v.plane.UpdateIntoBuffer(snapshotBuffer, v.data, now)
 
-			for k, v := range a.updates {
+			a.snapshotInputs[k] = &PlayerInput{plane: v.plane, data: nil}
 
-				updatePacket = append(updatePacket, v[1:]...)
-
-				delete(a.updates, k)
-			}
-
-			a.mux.Unlock()
-
-			// Send updates to all the players
-			for p := range a.players {
-				p.send <- updatePacket
-			}
-
-		} else {
-			// We unlock it anyway
-			a.mux.Unlock()
 		}
+
+		a.mux.Unlock()
+
+		// Send inputs to all the players
+		go a.Broadcast(snapshotBuffer.Bytes())
+
+		// We reset the buffer, ready for the next tick
+		snapshotBuffer.Reset()
 
 	}
 }
 
 func newArena() *Arena {
 	return &Arena{
-		players:    make(map[*Player]bool),
-		register:   make(chan *Player),
-		unregister: make(chan *Player),
-		state:      make(chan []byte),
-		updates:    make(map[uint32][]byte),
+		players:        make(map[*Player]bool),
+		connect:        make(chan *Player),
+		deconect:       make(chan *Player),
+		input:          make(chan *PlayerInput),
+		snapshotInputs: make(map[uint32]*PlayerInput),
+		tick:           0,
 	}
 }
 
 // Run start the Arena
 func (a *Arena) Run() {
 
-	go a.broadcastStates()
+	go a.broadcastSnapshots()
 
 	for {
 		select {
-		case player := <-a.register:
+		case player := <-a.connect:
 			a.connectPlayer(player)
-		case player := <-a.unregister:
+		case player := <-a.deconect:
 			a.deconnectPlayer(player)
-		case state := <-a.state:
+		case input := <-a.input:
 			a.mux.Lock()
-			a.updates[binary.BigEndian.Uint32(state[1:5])] = state
+			a.snapshotInputs[input.plane.uid] = input
 			a.mux.Unlock()
 		}
 	}
@@ -104,6 +105,8 @@ func (a *Arena) connectPlayer(player *Player) {
 
 	a.players[player] = true
 
+	a.snapshotInputs[player.uid] = &PlayerInput{plane: player.plane, data: nil}
+
 	// 0x1 - player's uid ----
 	message := make([]byte, 5)
 
@@ -115,15 +118,20 @@ func (a *Arena) connectPlayer(player *Player) {
 
 func (a *Arena) deconnectPlayer(player *Player) {
 
+	a.mux.Lock()
+
 	// Remove the player from the players list
 	if _, ok := a.players[player]; ok {
 		delete(a.players, player)
+		delete(a.snapshotInputs, player.uid)
+
+		message := make([]byte, 5)
+
+		message[0] = 0x2 // Deconnection
+		binary.BigEndian.PutUint32(message[1:], player.uid)
+
+		go a.Broadcast(message)
 	}
 
-	message := make([]byte, 5)
-
-	message[0] = 0x2 // Deconnection
-	binary.BigEndian.PutUint32(message[1:], player.uid)
-
-	go a.Broadcast(message)
+	a.mux.Unlock()
 }
