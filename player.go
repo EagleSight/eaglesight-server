@@ -42,12 +42,14 @@ func (p *Player) sendPlayersList() {
 	p.send <- message
 }
 
+func (p *Player) deconnect() {
+	p.arena.deconect <- p
+	p.conn.Close()
+}
+
 func (p *Player) readPump() {
 
-	defer func() {
-		p.arena.deconect <- p
-		p.conn.Close()
-	}()
+	defer p.deconnect()
 
 	p.arena.connect <- p
 
@@ -69,10 +71,7 @@ func (p *Player) readPump() {
 
 func (p *Player) writePump() {
 
-	defer func() {
-		p.arena.deconect <- p
-		p.conn.Close()
-	}()
+	defer p.deconnect()
 
 	for message := range p.send {
 
