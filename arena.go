@@ -51,7 +51,6 @@ func (a *Arena) broadcastSnapshots() {
 		a.mux.Unlock()
 
 		// Send inputs to all the players
-
 		a.Broadcast(snapshotBuffer.Bytes())
 
 		// We reset the buffer, ready for the next tick
