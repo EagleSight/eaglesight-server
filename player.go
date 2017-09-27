@@ -74,20 +74,17 @@ func (p *Player) writePump() {
 		p.conn.Close()
 	}()
 
-	for {
-		select {
-		case message := <-p.send:
+	for message := range p.send {
 
-			w, err := p.conn.NextWriter(websocket.BinaryMessage)
-			if err != nil {
-				return
-			}
+		w, err := p.conn.NextWriter(websocket.BinaryMessage)
+		if err != nil {
+			return
+		}
 
-			w.Write(message)
+		w.Write(message)
 
-			if err := w.Close(); err != nil {
-				return
-			}
+		if err := w.Close(); err != nil {
+			return
 		}
 	}
 }

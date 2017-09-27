@@ -23,6 +23,7 @@ type Plane struct {
 	rotation        vector3DF64
 	thrust          uint8   // from 0 to 255
 	speed           float64 // unit / seconds
+	maxSpeed        float64
 	maxAngularSpeed float64 // radian / seconds
 	updatedLast     time.Time
 }
@@ -44,6 +45,7 @@ func NewPlane(uid uint32) *Plane {
 		},
 		thrust:          0,
 		speed:           0,
+		maxSpeed:        20000,
 		maxAngularSpeed: 1.5,
 		updatedLast:     time.Now(),
 	}
@@ -66,11 +68,11 @@ func (p *Plane) UpdateIntoBuffer(buf *bytes.Buffer, params []byte, tick time.Tim
 
 	}
 	// HACK: speed multiplied from thrust
-	p.speed = float64(p.thrust/255) * 10000
+	p.speed = float64(p.thrust) / 255 * p.maxSpeed
 
 	mov := p.speed * deltaT
 
-	rot := p.maxAngularSpeed * float64(p.yaw/127) * deltaT
+	rot := p.maxAngularSpeed * float64(p.yaw) / 127 * deltaT
 	p.rotation.y += rot
 
 	p.location.x += float32(math.Sin(p.rotation.y) * mov)
