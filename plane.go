@@ -40,7 +40,7 @@ func NewPlane(uid uint32) *Plane {
 		},
 		rotation: vector3DF64{
 			x: 0,
-			y: 0,
+			y: 3.1416,
 			z: 0,
 		},
 		thrust:          0,
