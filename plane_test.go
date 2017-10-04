@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"testing"
 	"time"
 )
@@ -10,13 +11,14 @@ func BenchmarkUpdatePlane(b *testing.B) {
 
 	deltaT := time.Now()
 	arena := newArena()
-	const planesCount = 100
+	const planesCount = 1
 	planes := [planesCount]*Plane{}
 
 	for x := 0; x < planesCount; x++ {
 		planes[x] = NewPlane(uint32(x))
 	}
 
+	snapshotBuffer := new(bytes.Buffer)
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -26,7 +28,9 @@ func BenchmarkUpdatePlane(b *testing.B) {
 			arena.snapshotInputs[uint32(x)] = &PlayerInput{plane: planes[x], data: nil}
 		}
 
-		generateSnapshotBytes(arena, deltaT)
+		generateSnapshotBytes(snapshotBuffer, arena, deltaT)
+
+		snapshotBuffer.Reset()
 	}
 
 }
