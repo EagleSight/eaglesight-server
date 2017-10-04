@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"log"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 )
@@ -43,6 +44,7 @@ func (p *Player) sendPlayersList() {
 }
 
 func (p *Player) deconnect() {
+	log.Println(strconv.FormatUint(uint64(p.uid), 10) + " deconnected.")
 	p.arena.deconect <- p
 	p.conn.Close()
 }

@@ -17,22 +17,26 @@ type vector3DF64 struct {
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	uid             uint32 // Plane owner's player uid
-	yaw             int8   // from -127 to 127
-	location        vector3DF32
-	rotation        vector3DF64
-	thrust          uint8   // from 0 to 255
-	speed           float64 // unit / seconds
-	maxSpeed        float64
-	maxAngularSpeed float64 // radian / seconds
-	updatedLast     time.Time
+	uid           uint32 // Plane owner's player uid
+	yaw           int8   // from -127 to 127
+	pitch         int8   // from -127 to 127
+	location      vector3DF32
+	rotation      vector3DF64
+	thrust        uint8   // from 0 to 255
+	speed         float64 // unit / seconds
+	maxSpeed      float64
+	maxYawSpeed   float64 // radian / seconds
+	maxPitchSpeed float64 // radian / seconds
+	maxRollSpeed  float64 // radian / seconds
+	updatedLast   time.Time
 }
 
 // NewPlane fill the plane with its default properties
 func NewPlane(uid uint32) *Plane {
 	return &Plane{
-		uid: uid,
-		yaw: 0,
+		uid:   uid,
+		yaw:   0,
+		pitch: 0,
 		location: vector3DF32{
 			x: 0,
 			y: 500,
@@ -43,11 +47,13 @@ func NewPlane(uid uint32) *Plane {
 			y: 3.1416,
 			z: 0,
 		},
-		thrust:          0,
-		speed:           0,
-		maxSpeed:        20000,
-		maxAngularSpeed: 1.5,
-		updatedLast:     time.Now(),
+		thrust:        0,
+		speed:         0,
+		maxSpeed:      20000,
+		maxYawSpeed:   1.5,
+		maxPitchSpeed: 0.5,
+		maxRollSpeed:  1.0,
+		updatedLast:   time.Now(),
 	}
 }
 
@@ -64,7 +70,9 @@ func (p *Plane) UpdateIntoBuffer(buf *bytes.Buffer, params []byte, tick time.Tim
 	if len(params) > 0 { // We update those only if we have data
 
 		p.yaw = int8(params[1])
-		p.thrust = uint8(params[2])
+		//p.pitch = int8(params[2])
+
+		p.thrust = uint8(params[4])
 
 	}
 	// HACK: speed multiplied from thrust
@@ -72,8 +80,8 @@ func (p *Plane) UpdateIntoBuffer(buf *bytes.Buffer, params []byte, tick time.Tim
 
 	mov := p.speed * deltaT
 
-	rot := p.maxAngularSpeed * float64(p.yaw) / 127 * deltaT
-	p.rotation.y += rot
+	p.rotation.y += p.maxYawSpeed * float64(p.yaw) / 127 * deltaT
+	p.rotation.x += p.maxPitchSpeed * float64(p.pitch) / 127 * deltaT
 
 	p.location.x += float32(math.Sin(p.rotation.y) * mov)
 	p.location.z += float32(math.Cos(p.rotation.y) * mov)
