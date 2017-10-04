@@ -1,27 +1,32 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
 	"testing"
 	"time"
 )
 
 func BenchmarkUpdatePlane(b *testing.B) {
 	b.StopTimer()
-	buf := new(bytes.Buffer)
-	plane := NewPlane(666)
+
 	deltaT := time.Now()
+	arena := newArena()
+	const planesCount = 100
+	planes := [planesCount]*Plane{}
+
+	for x := 0; x < planesCount; x++ {
+		planes[x] = NewPlane(uint32(x))
+	}
 
 	b.StartTimer()
 
 	for i := 0; i < b.N; i++ {
-		deltaT.Add(time.Second / 90)
-		binary.Write(buf, binary.BigEndian, uint8(0x3))
-		binary.Write(buf, binary.BigEndian, uint32(3))
-		binary.Write(buf, binary.BigEndian, uint16(1))
-		plane.UpdateIntoBuffer(buf, []byte{0x3, 5, 5, 5, 5}, deltaT)
-		buf.Reset()
+		deltaT.Add(time.Second / 60)
+
+		for x := 0; x < planesCount; x++ {
+			arena.snapshotInputs[uint32(x)] = &PlayerInput{plane: planes[x], data: nil}
+		}
+
+		generateSnapshotBytes(arena, deltaT)
 	}
 
 }

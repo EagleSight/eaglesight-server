@@ -24,6 +24,16 @@ type Player struct {
 	plane *Plane
 }
 
+func newPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
+	return &Player{
+		arena: a,
+		conn:  conn,
+		uid:   uid,
+		send:  make(chan []byte, 16),
+		plane: NewPlane(uid),
+	}
+}
+
 func (p *Player) sendPlayersList() {
 
 	playersCount := len(p.arena.players)

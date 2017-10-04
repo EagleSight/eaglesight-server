@@ -45,13 +45,7 @@ func ws(arena *Arena, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	player := &Player{
-		arena: arena,
-		conn:  conn,
-		uid:   uint32(uid),
-		send:  make(chan []byte, 16),
-		plane: NewPlane(uint32(uid)),
-	}
+	player := newPlayer(uint32(uid), arena, conn)
 
 	go player.readPump()
 	go player.writePump()
