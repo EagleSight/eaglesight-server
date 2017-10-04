@@ -39,7 +39,7 @@ func NewPlane(uid uint32) *Plane {
 		},
 		rotation: vector3D{
 			x: 0,
-			y: 3.1416,
+			y: math.Pi,
 			z: 0,
 		},
 		thrust:        0,
@@ -78,8 +78,8 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 	p.rotation.y += p.maxYawSpeed * float64(p.yaw) / 127 * deltaT
 	p.rotation.x += p.maxPitchSpeed * float64(p.pitch) / 127 * deltaT
 
-	p.location.x += math.Sin(p.rotation.y * mov)
-	p.location.z += math.Cos(p.rotation.y * mov)
+	p.location.x += math.Sin(p.rotation.y) * mov
+	p.location.z += math.Cos(p.rotation.y) * mov
 
 	binary.BigEndian.PutUint32(buf[offset:], p.uid)
 

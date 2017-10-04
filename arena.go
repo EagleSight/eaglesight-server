@@ -36,8 +36,8 @@ func generateSnapshot(a *Arena, now time.Time) []byte {
 	snapshot := make([]byte, offset+len(a.snapshotInputs)*playerDataLenght)
 
 	snapshot[0] = uint8(0x3)
-	binary.BigEndian.PutUint32(snapshot[1:5], uint32(a.tick))
-	binary.BigEndian.PutUint16(snapshot[5:7], uint16(len(a.snapshotInputs)))
+	binary.BigEndian.PutUint32(snapshot[1:], uint32(a.tick))
+	binary.BigEndian.PutUint16(snapshot[5:], uint16(len(a.snapshotInputs)))
 
 	for k, v := range a.snapshotInputs {
 
