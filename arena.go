@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"sync"
 	"time"
@@ -23,44 +22,45 @@ type Arena struct {
 	mux            sync.Mutex
 }
 
-func generateSnapshotBytes(buf *bytes.Buffer, a *Arena, now time.Time) []byte {
+func generateSnapshot(a *Arena, now time.Time) []byte {
+
+	defer a.mux.Unlock()
 
 	// We lock the mutex because we want to make sure that nobody else append a state while the inputsPacket is made
 	a.mux.Lock()
 
 	a.tick++
 
-	binary.Write(buf, binary.BigEndian, uint8(0x3))
-	binary.Write(buf, binary.BigEndian, uint32(a.tick))
-	binary.Write(buf, binary.BigEndian, uint16(len(a.snapshotInputs)))
+	offset := 1 + 4 + 2
+	const playerDataLenght = 28
+	snapshot := make([]byte, offset+len(a.snapshotInputs)*playerDataLenght)
 
-	buf.Grow(len(a.snapshotInputs) * 28)
+	snapshot[0] = uint8(0x3)
+	binary.BigEndian.PutUint32(snapshot[1:5], uint32(a.tick))
+	binary.BigEndian.PutUint16(snapshot[5:7], uint16(len(a.snapshotInputs)))
 
 	for k, v := range a.snapshotInputs {
 
-		v.plane.UpdateIntoBuffer(buf, v.data, now)
+		v.plane.UpdateIntoBuffer(snapshot, offset, v.data, now)
+
+		offset += playerDataLenght
 
 		a.snapshotInputs[k] = &PlayerInput{plane: v.plane, data: nil}
 
 	}
 
-	a.mux.Unlock()
-
-	return buf.Bytes()
+	return snapshot
 
 }
 
 func (a *Arena) broadcastSnapshots() {
 
 	c := time.Tick(time.Second / 60)
-	snapshotBuffer := new(bytes.Buffer)
 
 	for now := range c {
 
 		// Send inputs to all the players
-		a.Broadcast(generateSnapshotBytes(snapshotBuffer, a, now))
-
-		snapshotBuffer.Reset()
+		a.Broadcast(generateSnapshot(a, now))
 
 	}
 }
