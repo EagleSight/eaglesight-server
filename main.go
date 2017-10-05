@@ -45,7 +45,7 @@ func ws(arena *Arena, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	player := newPlayer(uint32(uid), arena, conn)
+	player := NewPlayer(uint32(uid), arena, conn)
 
 	go player.readPump()
 	go player.writePump()
@@ -55,7 +55,7 @@ func main() {
 
 	log.Println("running...")
 
-	arena := newArena()
+	arena := NewArena()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws(arena, w, r)

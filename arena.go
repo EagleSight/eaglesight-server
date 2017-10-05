@@ -65,7 +65,7 @@ func (a *Arena) broadcastSnapshots() {
 	}
 }
 
-func newArena() *Arena {
+func NewArena() *Arena {
 	return &Arena{
 		players:        make(map[*Player]bool),
 		connect:        make(chan *Player),

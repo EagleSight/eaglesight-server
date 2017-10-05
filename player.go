@@ -24,7 +24,8 @@ type Player struct {
 	plane *Plane
 }
 
-func newPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
+// NewPlayer returns a new player
+func NewPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
 	return &Player{
 		arena: a,
 		conn:  conn,
