@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"log"
 	"testing"
 	"time"
 
@@ -35,8 +34,6 @@ func TestSnapshotGeneration(t *testing.T) {
 	if binary.BigEndian.Uint16(b[5:7]) != 2 {
 		t.Error("Players count is wrong")
 	}
-
-	log.Println(b)
 
 }
 

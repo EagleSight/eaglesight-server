@@ -65,6 +65,7 @@ func (a *Arena) broadcastSnapshots() {
 	}
 }
 
+// NewArena return a arena with default settings
 func NewArena() *Arena {
 	return &Arena{
 		players:        make(map[*Player]bool),

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -29,5 +30,18 @@ func BenchmarkUpdatePlane(b *testing.B) {
 		generateSnapshot(arena, deltaT)
 
 	}
+
+}
+
+func TestPlaneMovement(t *testing.T) {
+
+	p := NewPlane(1)
+
+	p.location.y = 0
+	p.deltaRot.y = -math.Pi / 4
+	p.deltaRot.x = -math.Pi / 4
+	p.speed.z = 10
+
+	p.calculateMovement()
 
 }

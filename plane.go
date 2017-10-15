@@ -6,49 +6,60 @@ import (
 	"time"
 )
 
-type vector3D struct {
-	x, y, z float64
+type axes struct {
+	roll, pitch, yaw float64
 }
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	uid           uint32 // Plane owner's player uid
-	yaw           int8   // from -127 to 127
-	pitch         int8   // from -127 to 127
-	location      vector3D
-	rotation      vector3D
-	thrust        uint8   // from 0 to 255
-	speed         float64 // unit / seconds
-	maxSpeed      float64
-	maxYawSpeed   float64 // radian / seconds
-	maxPitchSpeed float64 // radian / seconds
-	maxRollSpeed  float64 // radian / seconds
-	updatedLast   time.Time
+	uid         uint32 // Plane owner's player uid
+	inputsAxes  axes
+	inputThrust float64
+	location    vector3D
+	orientation matrix3
+	deltaRot    vector3D
+	speed       vector3D // unit / seconds
+	maxSpeed    float64
+	maxRotation vector3D // All in radians / seconds
+	updatedLast time.Time
 }
 
 // NewPlane fill the plane with its default properties
 func NewPlane(uid uint32) *Plane {
 	return &Plane{
-		uid:   uid,
-		yaw:   0,
-		pitch: 0,
+		uid: uid,
+
+		inputsAxes: axes{
+			roll:  0,
+			pitch: 0,
+			yaw:   0,
+		},
+
+		inputThrust: 0,
+
 		location: vector3D{
 			x: 0,
 			y: 500,
 			z: 0,
 		},
-		rotation: vector3D{
+		orientation: newMatrix3(),
+		deltaRot: vector3D{
 			x: 0,
-			y: math.Pi,
+			y: math.Pi / 2,
 			z: 0,
 		},
-		thrust:        0,
-		speed:         0,
-		maxSpeed:      20000,
-		maxYawSpeed:   1.5,
-		maxPitchSpeed: 0.5,
-		maxRollSpeed:  1.0,
-		updatedLast:   time.Now(),
+		speed: vector3D{
+			x: 0,
+			y: 0,
+			z: 0,
+		},
+		maxSpeed: 20000,
+		maxRotation: vector3D{
+			x: 1.5,
+			y: 1.5,
+			z: 1.5,
+		},
+		updatedLast: time.Now(),
 	}
 }
 
@@ -64,31 +75,59 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 
 	if len(params) > 0 { // We update those only if we have data
 
-		p.yaw = int8(params[1])
-		p.pitch = int8(params[2])
+		p.inputsAxes.roll = -float64(int8(params[1])) / 127
+		p.inputsAxes.pitch = float64(int8(params[2])) / 127
+		p.inputsAxes.yaw = float64(int8(params[3])) / 127
 
-		p.thrust = uint8(params[4])
+		p.inputThrust = float64(uint8(params[4])) / 255
 
+		// HACK: speed multiplied from thrust
+		p.speed.z = p.inputThrust * p.maxSpeed
 	}
-	// HACK: speed multiplied from thrust
-	p.speed = float64(p.thrust) / 255 * p.maxSpeed
 
-	mov := p.speed * deltaT
+	// deltaRot is only used for display on the client side
+	p.deltaRot.x = p.maxRotation.x * p.inputsAxes.pitch * deltaT
+	p.deltaRot.y = p.maxRotation.y * p.inputsAxes.yaw * deltaT
+	p.deltaRot.z = p.maxRotation.z * p.inputsAxes.roll * deltaT
 
-	p.rotation.y += p.maxYawSpeed * float64(p.yaw) / 127 * deltaT
-	p.rotation.x += p.maxPitchSpeed * float64(p.pitch) / 127 * deltaT
+	mov := p.calculateMovement()
 
-	p.location.x += math.Sin(p.rotation.y) * mov
-	p.location.z += math.Cos(p.rotation.y) * mov
+	p.location.x += mov.x * deltaT
+	p.location.y += (mov.y - 980) * deltaT
+	p.location.z += mov.z * deltaT
 
+	// Dump everything into the slice
 	binary.BigEndian.PutUint32(buf[offset:], p.uid)
 
 	binary.BigEndian.PutUint32(buf[offset+4:], math.Float32bits(float32(p.location.x)))
 	binary.BigEndian.PutUint32(buf[offset+8:], math.Float32bits(float32(p.location.y)))
 	binary.BigEndian.PutUint32(buf[offset+12:], math.Float32bits(float32(p.location.z)))
 
-	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(p.rotation.x)))
-	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(p.rotation.y)))
-	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(p.rotation.z)))
+	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(p.deltaRot.x))) // X
+	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(p.deltaRot.y))) // Y
+	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(p.deltaRot.z))) // Z
+
+}
+
+func (p *Plane) calculateMovement() vector3D {
+
+	pitchMat := makeMatrix3X(p.deltaRot.x)
+	yawMat := makeMatrix3Y(p.deltaRot.y)
+	rollMat := makeMatrix3Z(p.deltaRot.z)
+
+	localRotMat := yawMat.Mul(pitchMat)
+	localRotMat = rollMat.Mul(localRotMat)
+
+	// invertedOrientation := p.orientation.getInverse()
+
+	// rotMat := invertedOrientation.Mul(localRotMat)
+
+	rotMat := p.orientation.Mul(localRotMat)
+
+	mov := p.speed.multiplyByMatrix3(&rotMat)
+
+	p.orientation = rotMat
+
+	return mov
 
 }
