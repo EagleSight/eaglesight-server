@@ -18,9 +18,9 @@ type Plane struct {
 	location    vector3D
 	orientation matrix3
 	deltaRot    vector3D
+	maxRot      vector3D // All in radians / seconds
 	speed       vector3D // unit / seconds
 	maxSpeed    float64
-	maxRotation vector3D // All in radians / seconds
 	updatedLast time.Time
 }
 
@@ -54,7 +54,7 @@ func NewPlane(uid uint32) *Plane {
 			z: 0,
 		},
 		maxSpeed: 20000,
-		maxRotation: vector3D{
+		maxRot: vector3D{
 			x: 1.5,
 			y: 1.5,
 			z: 1.5,
@@ -86,14 +86,14 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 	}
 
 	// deltaRot is only used for display on the client side
-	p.deltaRot.x = p.maxRotation.x * p.inputsAxes.pitch * deltaT
-	p.deltaRot.y = p.maxRotation.y * p.inputsAxes.yaw * deltaT
-	p.deltaRot.z = p.maxRotation.z * p.inputsAxes.roll * deltaT
+	p.deltaRot.x = p.maxRot.x * p.inputsAxes.pitch * deltaT
+	p.deltaRot.y = p.maxRot.y * p.inputsAxes.yaw * deltaT
+	p.deltaRot.z = p.maxRot.z * p.inputsAxes.roll * deltaT
 
 	mov := p.calculateMovement()
 
 	p.location.x += mov.x * deltaT
-	p.location.y += (mov.y - 980) * deltaT
+	p.location.y += mov.y * deltaT
 	p.location.z += mov.z * deltaT
 
 	// Dump everything into the slice
@@ -103,9 +103,11 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 	binary.BigEndian.PutUint32(buf[offset+8:], math.Float32bits(float32(p.location.y)))
 	binary.BigEndian.PutUint32(buf[offset+12:], math.Float32bits(float32(p.location.z)))
 
-	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(p.deltaRot.x))) // X
-	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(p.deltaRot.y))) // Y
-	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(p.deltaRot.z))) // Z
+	rotX, rotY, rotZ := p.orientation.ToEulerAngle()
+
+	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(rotX))) // X
+	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(rotY))) // Y
+	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(rotZ))) // Z
 
 }
 
@@ -118,15 +120,9 @@ func (p *Plane) calculateMovement() vector3D {
 	localRotMat := yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
 
-	// invertedOrientation := p.orientation.getInverse()
+	p.orientation = p.orientation.Mul(localRotMat)
 
-	// rotMat := invertedOrientation.Mul(localRotMat)
-
-	rotMat := p.orientation.Mul(localRotMat)
-
-	mov := p.speed.multiplyByMatrix3(&rotMat)
-
-	p.orientation = rotMat
+	mov := p.speed.multiplyByMatrix3(&p.orientation)
 
 	return mov
 

@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Run this with : go test -bench=Benchmark* -cpu 1 -benchmem
 func BenchmarkUpdatePlane(b *testing.B) {
 	b.StopTimer()
 

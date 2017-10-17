@@ -157,3 +157,18 @@ func (m *matrix3) Add(m1 *matrix3, m2 matrix3) {
 	m._33 = m1._31 + m2._13
 
 }
+
+func (m *matrix3) ToEulerAngle() (x float64, y float64, z float64) {
+
+	z = math.Asin(math.Max(-1, math.Min(1, m._21)))
+
+	if math.Abs(m._21) < 0.999999 {
+		x = math.Atan2(-m._23, m._22)
+		y = math.Atan2(-m._31, m._11)
+	} else {
+		x = 0
+		y = math.Atan2(m._13, m._33)
+	}
+
+	return
+}

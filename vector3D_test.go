@@ -9,6 +9,7 @@ func TestMultiplyByMatrix3(t *testing.T) {
 	pitchMat := makeMatrix3X(0)
 	yawMat := makeMatrix3Y(math.Pi / 2)
 	rollMat := makeMatrix3Z(0)
+
 	orientation := newMatrix3()
 
 	localRotMat := yawMat.Mul(pitchMat)
