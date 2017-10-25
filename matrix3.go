@@ -158,17 +158,17 @@ func (m *matrix3) Add(m1 *matrix3, m2 matrix3) {
 
 }
 
-func (m *matrix3) ToEulerAngle() (x float64, y float64, z float64) {
+func (m *matrix3) ToEulerAngle() (v vector3D) {
 
-	z = math.Asin(math.Max(-1, math.Min(1, m._21)))
+	v.z = math.Asin(math.Max(-1, math.Min(1, m._21)))
 
 	if math.Abs(m._21) < 0.999999 {
-		x = math.Atan2(-m._23, m._22)
-		y = math.Atan2(-m._31, m._11)
+		v.x = math.Atan2(-m._23, m._22)
+		v.y = math.Atan2(-m._31, m._11)
 	} else {
-		x = 0
-		y = math.Atan2(m._13, m._33)
+		v.x = 0
+		v.y = math.Atan2(m._13, m._33)
 	}
 
-	return
+	return v
 }

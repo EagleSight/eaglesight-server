@@ -19,6 +19,7 @@ type Plane struct {
 	orientation matrix3
 	deltaRot    vector3D
 	maxRot      vector3D // All in radians / seconds
+	absRot      vector3D // Absolute rotation of the plane
 	speed       vector3D // unit / seconds
 	maxSpeed    float64
 	updatedLast time.Time
@@ -48,12 +49,17 @@ func NewPlane(uid uint32) *Plane {
 			y: math.Pi / 2,
 			z: 0,
 		},
+		absRot: vector3D{
+			x: 0,
+			y: 0,
+			z: 0,
+		},
 		speed: vector3D{
 			x: 0,
 			y: 0,
 			z: 0,
 		},
-		maxSpeed: 20000,
+		maxSpeed: 400,
 		maxRot: vector3D{
 			x: 1.5,
 			y: 1.5,
@@ -92,6 +98,8 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 
 	mov := p.calculateMovement()
 
+	p.absRot = p.orientation.ToEulerAngle()
+
 	p.location.x += mov.x * deltaT
 	p.location.y += mov.y * deltaT
 	p.location.z += mov.z * deltaT
@@ -103,11 +111,9 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 	binary.BigEndian.PutUint32(buf[offset+8:], math.Float32bits(float32(p.location.y)))
 	binary.BigEndian.PutUint32(buf[offset+12:], math.Float32bits(float32(p.location.z)))
 
-	rotX, rotY, rotZ := p.orientation.ToEulerAngle()
-
-	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(rotX))) // X
-	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(rotY))) // Y
-	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(rotZ))) // Z
+	binary.BigEndian.PutUint32(buf[offset+16:], math.Float32bits(float32(p.absRot.x)))
+	binary.BigEndian.PutUint32(buf[offset+20:], math.Float32bits(float32(p.absRot.y)))
+	binary.BigEndian.PutUint32(buf[offset+24:], math.Float32bits(float32(p.absRot.z)))
 
 }
 
