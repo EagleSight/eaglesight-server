@@ -142,23 +142,7 @@ func (m *matrix3) Mul(m2 matrix3) matrix3 {
 
 }
 
-func (m *matrix3) Add(m1 *matrix3, m2 matrix3) {
-
-	m._11 = m1._11 + m2._11
-	m._12 = m1._11 + m2._12
-	m._13 = m1._11 + m2._13
-
-	m._21 = m1._21 + m2._11
-	m._22 = m1._21 + m2._12
-	m._23 = m1._21 + m2._13
-
-	m._31 = m1._31 + m2._11
-	m._32 = m1._31 + m2._12
-	m._33 = m1._31 + m2._13
-
-}
-
-func (m *matrix3) ToEulerAngle() (v vector3D) {
+func (m *matrix3) ToEulerAngle() (v Vector3D) {
 
 	v.z = math.Asin(math.Max(-1, math.Min(1, m._21)))
 

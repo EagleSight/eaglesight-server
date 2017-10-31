@@ -12,24 +12,25 @@ type axes struct {
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	uid         uint32 // Plane owner's player uid
+	uid         uint32
+	arena       *Arena
 	inputsAxes  axes
 	inputThrust float64
-	location    vector3D
+	location    Vector3D
 	orientation matrix3
-	deltaRot    vector3D
-	maxRot      vector3D // All in radians / seconds
-	absRot      vector3D // Absolute rotation of the plane
-	speed       vector3D // unit / seconds
+	deltaRot    Vector3D
+	maxRot      Vector3D // All in radians / seconds
+	absRot      Vector3D // Absolute rotation of the plane
+	speed       Vector3D // unit / seconds
 	maxSpeed    float64
 	updatedLast time.Time
 }
 
 // NewPlane fill the plane with its default properties
-func NewPlane(uid uint32) *Plane {
+func NewPlane(uid uint32, arena *Arena) *Plane {
 	return &Plane{
-		uid: uid,
-
+		uid:   uid,
+		arena: arena,
 		inputsAxes: axes{
 			roll:  0,
 			pitch: 0,
@@ -38,32 +39,32 @@ func NewPlane(uid uint32) *Plane {
 
 		inputThrust: 0,
 
-		location: vector3D{
+		location: Vector3D{
 			x: 0,
-			y: 500,
+			y: 1500,
 			z: 0,
 		},
 		orientation: newMatrix3(),
-		deltaRot: vector3D{
+		deltaRot: Vector3D{
 			x: 0,
 			y: math.Pi / 2,
 			z: 0,
 		},
-		absRot: vector3D{
+		absRot: Vector3D{
 			x: 0,
 			y: 0,
 			z: 0,
 		},
-		speed: vector3D{
+		speed: Vector3D{
 			x: 0,
 			y: 0,
 			z: 0,
 		},
-		maxSpeed: 400,
-		maxRot: vector3D{
+		maxSpeed: 3 * 685 * 0.27,
+		maxRot: Vector3D{
 			x: 1.5,
 			y: 1.5,
-			z: 1.5,
+			z: 1.2,
 		},
 		updatedLast: time.Now(),
 	}
@@ -104,6 +105,9 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 	p.location.y += mov.y * deltaT
 	p.location.z += mov.z * deltaT
 
+	// Update the position if there is colision
+	p.correctFromCollision()
+
 	// Dump everything into the slice
 	binary.BigEndian.PutUint32(buf[offset:], p.uid)
 
@@ -117,7 +121,7 @@ func (p *Plane) UpdateIntoBuffer(buf []byte, offset int, params []byte, tick tim
 
 }
 
-func (p *Plane) calculateMovement() vector3D {
+func (p *Plane) calculateMovement() Vector3D {
 
 	pitchMat := makeMatrix3X(p.deltaRot.x)
 	yawMat := makeMatrix3Y(p.deltaRot.y)
@@ -131,5 +135,24 @@ func (p *Plane) calculateMovement() vector3D {
 	mov := p.speed.multiplyByMatrix3(&p.orientation)
 
 	return mov
+
+}
+
+func (p *Plane) correctFromCollision() {
+
+	triangle := p.arena.arenaMap.OverredTriangle(p.location)
+
+	// We are out of bound
+	if math.IsNaN(triangle[0].x) {
+		return
+	}
+
+	h := heightOnTriangle(p.location, &triangle)
+
+	// We are under the surface
+	if p.location.y < h+5 {
+		// We go back to the surface
+		p.location.y = h + 5
+	}
 
 }

@@ -16,7 +16,7 @@ func BenchmarkUpdatePlane(b *testing.B) {
 	planes := [planesCount]*Plane{}
 
 	for x := 0; x < planesCount; x++ {
-		planes[x] = NewPlane(uint32(x))
+		planes[x] = NewPlane(uint32(x), arena)
 	}
 
 	b.StartTimer()
@@ -36,7 +36,9 @@ func BenchmarkUpdatePlane(b *testing.B) {
 
 func TestPlaneMovement(t *testing.T) {
 
-	p := NewPlane(1)
+	arena := NewArena()
+
+	p := NewPlane(1, arena)
 
 	p.location.y = 0
 	p.deltaRot.y = -math.Pi / 4

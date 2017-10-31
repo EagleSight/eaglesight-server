@@ -13,8 +13,8 @@ func TestSnapshotGeneration(t *testing.T) {
 	arena := NewArena()
 	const planesCount = 32
 
-	arena.snapshotInputs[uint32(1)] = &PlayerInput{plane: NewPlane(uint32(1)), data: nil}
-	arena.snapshotInputs[uint32(2)] = &PlayerInput{plane: NewPlane(uint32(2)), data: nil}
+	arena.snapshotInputs[uint32(1)] = &PlayerInput{plane: NewPlane(uint32(1), arena), data: nil}
+	arena.snapshotInputs[uint32(2)] = &PlayerInput{plane: NewPlane(uint32(2), arena), data: nil}
 
 	deltaT := time.Now().Add(time.Second / 60)
 

@@ -20,6 +20,23 @@ type Arena struct {
 	snapshotInputs map[uint32]*PlayerInput
 	tick           uint32
 	mux            sync.Mutex
+	arenaMap       *ArenaMap
+}
+
+// NewArena return a arena with default settings
+func NewArena() *Arena {
+
+	arenaMap := LoadArenaMap()
+
+	return &Arena{
+		players:        make(map[*Player]bool),
+		connect:        make(chan *Player),
+		deconect:       make(chan *Player),
+		input:          make(chan *PlayerInput),
+		snapshotInputs: make(map[uint32]*PlayerInput),
+		tick:           0,
+		arenaMap:       &arenaMap,
+	}
 }
 
 func generateSnapshot(a *Arena, now time.Time) []byte {
@@ -62,18 +79,6 @@ func (a *Arena) broadcastSnapshots() {
 		// Send inputs to all the players
 		a.Broadcast(generateSnapshot(a, now))
 
-	}
-}
-
-// NewArena return a arena with default settings
-func NewArena() *Arena {
-	return &Arena{
-		players:        make(map[*Player]bool),
-		connect:        make(chan *Player),
-		deconect:       make(chan *Player),
-		input:          make(chan *PlayerInput),
-		snapshotInputs: make(map[uint32]*PlayerInput),
-		tick:           0,
 	}
 }
 

@@ -31,7 +31,7 @@ func NewPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
 		conn:  conn,
 		uid:   uid,
 		send:  make(chan []byte, 16),
-		plane: NewPlane(uid),
+		plane: NewPlane(uid, a),
 	}
 }
 
