@@ -140,6 +140,8 @@ func (p *Plane) calculateMovement() Vector3D {
 
 func (p *Plane) correctFromCollision() {
 
+	const margin = 5
+
 	triangle := p.arena.arenaMap.OverredTriangle(p.location)
 
 	// We are out of bound
@@ -147,12 +149,18 @@ func (p *Plane) correctFromCollision() {
 		return
 	}
 
+	// Small optimization
+	if p.location.y >= highestInTriangle(triangle)+margin {
+		return
+	}
+
+	// The real thing
 	h := heightOnTriangle(p.location, &triangle)
 
 	// We are under the surface
-	if p.location.y < h+5 {
+	if p.location.y < h+margin {
 		// We go back to the surface
-		p.location.y = h + 5
+		p.location.y = h + margin
 	}
 
 }

@@ -48,3 +48,18 @@ func heightOnTriangle(p Vector3D, t *[3]Vector3D) float64 {
 	return y
 
 }
+
+// Find the height of the heighest point in triangle
+func highestInTriangle(triangle [3]Vector3D) (h float64) {
+
+	h = 0
+
+	for _, point := range triangle {
+		if point.y > h {
+			h = point.y
+		}
+	}
+
+	return h
+
+}
