@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/binary"
 	"testing"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -16,9 +15,7 @@ func TestSnapshotGeneration(t *testing.T) {
 	arena.snapshotInputs[uint32(1)] = &PlayerInput{plane: NewPlane(uint32(1), arena), data: nil}
 	arena.snapshotInputs[uint32(2)] = &PlayerInput{plane: NewPlane(uint32(2), arena), data: nil}
 
-	deltaT := time.Now().Add(time.Second / 60)
-
-	b := generateSnapshot(arena, deltaT)
+	b := generateSnapshot(arena, 1/60)
 
 	// # Instruction Type == 3
 	if b[0] != 0x3 {

@@ -26,6 +26,26 @@ func (v *Vector3D) Sub(b *Vector3D) (c Vector3D) {
 	return c
 }
 
+// Add adds two vectors together
+func (v *Vector3D) Add(b *Vector3D) (c Vector3D) {
+
+	c.x = v.x + b.x
+	c.y = v.y + b.y
+	c.z = v.z + b.z
+
+	return c
+}
+
+// MulScalar scale the vector by a sigle number
+func (v *Vector3D) MulScalar(b float64) (c Vector3D) {
+
+	c.x = v.x * b
+	c.y = v.y * b
+	c.z = v.z * b
+
+	return c
+}
+
 // CrossProduct returns the cross product of u and v
 func CrossProduct(u *Vector3D, v *Vector3D) (d Vector3D) {
 

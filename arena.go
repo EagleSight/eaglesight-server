@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"math"
 	"sync"
 	"time"
 )
@@ -39,7 +40,7 @@ func NewArena() *Arena {
 	}
 }
 
-func generateSnapshot(a *Arena, now time.Time) []byte {
+func generateSnapshot(a *Arena, deltaT float64) []byte {
 
 	defer a.mux.Unlock()
 
@@ -48,17 +49,30 @@ func generateSnapshot(a *Arena, now time.Time) []byte {
 
 	a.tick++
 
-	offset := 1 + 4 + 2
+	offset := 1 + 4 + 2 // unt8 + uint32 + uint16
 	const playerDataLenght = 28
 	snapshot := make([]byte, offset+len(a.snapshotInputs)*playerDataLenght)
 
-	snapshot[0] = uint8(0x3)
+	snapshot[0] = uint8(3)
 	binary.BigEndian.PutUint32(snapshot[1:], uint32(a.tick))
 	binary.BigEndian.PutUint16(snapshot[5:], uint16(len(a.snapshotInputs)))
 
 	for k, v := range a.snapshotInputs {
 
-		v.plane.UpdateIntoBuffer(snapshot, offset, v.data, now)
+		v.plane.Update(v.data, deltaT)
+
+		// Dump everything into the slice
+		binary.BigEndian.PutUint32(snapshot[offset:], v.plane.uid)
+
+		// Location
+		binary.BigEndian.PutUint32(snapshot[offset+4:], math.Float32bits(float32(v.plane.location.x)))
+		binary.BigEndian.PutUint32(snapshot[offset+8:], math.Float32bits(float32(v.plane.location.y)))
+		binary.BigEndian.PutUint32(snapshot[offset+12:], math.Float32bits(float32(v.plane.location.z)))
+
+		// Rotation
+		binary.BigEndian.PutUint32(snapshot[offset+16:], math.Float32bits(float32(v.plane.absRot.x)))
+		binary.BigEndian.PutUint32(snapshot[offset+20:], math.Float32bits(float32(v.plane.absRot.y)))
+		binary.BigEndian.PutUint32(snapshot[offset+24:], math.Float32bits(float32(v.plane.absRot.z)))
 
 		offset += playerDataLenght
 
@@ -72,12 +86,20 @@ func generateSnapshot(a *Arena, now time.Time) []byte {
 
 func (a *Arena) broadcastSnapshots() {
 
+	previousTickTime := time.Now()
+
 	c := time.Tick(time.Second / 60)
 
 	for now := range c {
 
+		// Calculate the time since the last time updated
+		deltaT := now.Sub(previousTickTime).Seconds()
+
+		// Save for the next time
+		previousTickTime = now
+
 		// Send inputs to all the players
-		a.Broadcast(generateSnapshot(a, now))
+		a.Broadcast(generateSnapshot(a, deltaT))
 
 	}
 }
