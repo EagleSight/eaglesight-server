@@ -29,26 +29,26 @@ func TestMultiplyByMatrix3(t *testing.T) {
 func TestHeightOnTriangle(t *testing.T) {
 
 	point := Vector3D{
-		x: 1.0,
-		y: 4.0,
-		z: 1.0,
+		X: 1.0,
+		Y: 4.0,
+		Z: 1.0,
 	}
 
 	triangle := [3]Vector3D{
 		Vector3D{
-			x: 0.0,
-			y: 2.0,
-			z: 0.0,
+			X: 0.0,
+			Y: 2.0,
+			Z: 0.0,
 		},
 		Vector3D{
-			x: 2.0,
-			y: 0.0,
-			z: -1.0,
+			X: 2.0,
+			Y: 0.0,
+			Z: -1.0,
 		},
 		Vector3D{
-			x: 2.0,
-			y: 0.0,
-			z: 1.0,
+			X: 2.0,
+			Y: 0.0,
+			Z: 1.0,
 		},
 	}
 
@@ -62,19 +62,19 @@ func TestHeightOnTriangle(t *testing.T) {
 
 	triangle = [3]Vector3D{
 		Vector3D{
-			x: 0.0,
-			y: 3.0,
-			z: 2.0,
+			X: 0.0,
+			Y: 3.0,
+			Z: 2.0,
 		},
 		Vector3D{
-			x: 2.0,
-			y: 1.0,
-			z: -3.0,
+			X: 2.0,
+			Y: 1.0,
+			Z: -3.0,
 		},
 		Vector3D{
-			x: 2.0,
-			y: 1.0,
-			z: 1.0,
+			X: 2.0,
+			Y: 1.0,
+			Z: 1.0,
 		},
 	}
 

@@ -144,14 +144,14 @@ func (m *matrix3) Mul(m2 matrix3) matrix3 {
 
 func (m *matrix3) ToEulerAngle() (v Vector3D) {
 
-	v.z = math.Asin(math.Max(-1, math.Min(1, m._21)))
+	v.Z = math.Asin(math.Max(-1, math.Min(1, m._21)))
 
 	if math.Abs(m._21) < 0.999999 {
-		v.x = math.Atan2(-m._23, m._22)
-		v.y = math.Atan2(-m._31, m._11)
+		v.X = math.Atan2(-m._23, m._22)
+		v.Y = math.Atan2(-m._31, m._11)
 	} else {
-		v.x = 0
-		v.y = math.Atan2(m._13, m._33)
+		v.X = 0
+		v.Y = math.Atan2(m._13, m._33)
 	}
 
 	return v

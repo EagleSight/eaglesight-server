@@ -62,17 +62,17 @@ func generateSnapshot(a *Arena, deltaT float64) []byte {
 		v.plane.Update(v.data, deltaT)
 
 		// Dump everything into the slice
-		binary.BigEndian.PutUint32(snapshot[offset:], v.plane.uid)
+		binary.BigEndian.PutUint32(snapshot[offset:], v.plane.UID)
 
 		// Location
-		binary.BigEndian.PutUint32(snapshot[offset+4:], math.Float32bits(float32(v.plane.location.x)))
-		binary.BigEndian.PutUint32(snapshot[offset+8:], math.Float32bits(float32(v.plane.location.y)))
-		binary.BigEndian.PutUint32(snapshot[offset+12:], math.Float32bits(float32(v.plane.location.z)))
+		binary.BigEndian.PutUint32(snapshot[offset+4:], math.Float32bits(float32(v.plane.Location.X)))
+		binary.BigEndian.PutUint32(snapshot[offset+8:], math.Float32bits(float32(v.plane.Location.Y)))
+		binary.BigEndian.PutUint32(snapshot[offset+12:], math.Float32bits(float32(v.plane.Location.Z)))
 
 		// Rotation
-		binary.BigEndian.PutUint32(snapshot[offset+16:], math.Float32bits(float32(v.plane.absRot.x)))
-		binary.BigEndian.PutUint32(snapshot[offset+20:], math.Float32bits(float32(v.plane.absRot.y)))
-		binary.BigEndian.PutUint32(snapshot[offset+24:], math.Float32bits(float32(v.plane.absRot.z)))
+		binary.BigEndian.PutUint32(snapshot[offset+16:], math.Float32bits(float32(v.plane.Rotation.X)))
+		binary.BigEndian.PutUint32(snapshot[offset+20:], math.Float32bits(float32(v.plane.Rotation.Y)))
+		binary.BigEndian.PutUint32(snapshot[offset+24:], math.Float32bits(float32(v.plane.Rotation.Z)))
 
 		offset += playerDataLenght
 
@@ -117,7 +117,7 @@ func (a *Arena) Run() {
 			a.deconnectPlayer(player)
 		case input := <-a.input:
 			a.mux.Lock()
-			a.snapshotInputs[input.plane.uid] = input
+			a.snapshotInputs[input.plane.UID] = input
 			a.mux.Unlock()
 		}
 	}

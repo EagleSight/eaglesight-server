@@ -137,16 +137,16 @@ func TestMatrixToEulerAngle(t *testing.T) {
 
 	v2 := localRotMat.ToEulerAngle()
 
-	if math.Abs(x1-v2.x) > 0.00001 {
-		t.Errorf("x1 is different from x2: %f != %f", x1, v2.x)
+	if math.Abs(x1-v2.X) > 0.00001 {
+		t.Errorf("x1 is different from x2: %f != %f", x1, v2.X)
 	}
 
-	if math.Abs(y1-v2.y) > 0.00001 {
-		t.Errorf("y1 is different from y2: %f != %f", y1, v2.y)
+	if math.Abs(y1-v2.Y) > 0.00001 {
+		t.Errorf("y1 is different from y2: %f != %f", y1, v2.Y)
 	}
 
-	if math.Abs(z1-v2.z) > 0.001 {
-		t.Errorf("z1 is different from z2: %f != %f", z1, v2.z)
+	if math.Abs(z1-v2.Z) > 0.001 {
+		t.Errorf("z1 is different from z2: %f != %f", z1, v2.Z)
 	}
 
 	// For singular
@@ -164,16 +164,16 @@ func TestMatrixToEulerAngle(t *testing.T) {
 
 	v2 = localRotMat.ToEulerAngle()
 
-	if x1 != v2.x {
-		t.Errorf("x1 is different for singular from x2: %f != %f", x1, v2.x)
+	if x1 != v2.X {
+		t.Errorf("x1 is different for singular from x2: %f != %f", x1, v2.X)
 	}
 
-	if y1 != v2.y {
-		t.Errorf("y1 is different for singular  from y2: %f != %f", y1, v2.y)
+	if y1 != v2.Y {
+		t.Errorf("y1 is different for singular  from y2: %f != %f", y1, v2.Y)
 	}
 
 	if z1 != 0 {
-		t.Errorf("z1 is different for singular from 0: %f != 0.0", v2.z)
+		t.Errorf("z1 is different for singular from 0: %f != 0.0", v2.Z)
 	}
 
 }

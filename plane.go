@@ -4,61 +4,81 @@ import (
 	"math"
 )
 
-type axes struct {
-	roll, pitch, yaw float64
+// Axes of a plane
+type Axes struct {
+	Roll, Pitch, Yaw float64
+}
+
+type minMax struct {
+	Min float64 `json:"min"`
+	Max float64 `json:"max"`
+}
+
+// PlaneFlightProps are all the constant properties that can easily be loaded from a JSON object
+type PlaneFlightProps struct {
+	MaxThrust    float64  `json:"maxThrust"`
+	Mass         float64  `json:"mass"`
+	MaxRotations Vector3D `json:"maxRotations"` // All in radians / seconds
+	DragFactors  Vector3D `json:"dragFactors"`  // A drag factor are "Area * Drag Coeficient * 0.5" of a side
+	LiftRange    minMax   `json:"liftRange"`
 }
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	uid         uint32
-	arena       *Arena
-	inputsAxes  axes
-	inputThrust float64
-	location    Vector3D
-	orientation matrix3
-	maxRot      Vector3D // All in radians / seconds
-	absRot      Vector3D // Absolute rotation of the plane
-	speed       Vector3D // unit / seconds
-	maxThrust   float64
-	mass        float64
+	UID         uint32
+	Arena       *Arena
+	InputsAxes  Axes
+	InputThrust float64
+	Location    Vector3D
+	Orientation matrix3
+	Rotation    Vector3D // Absolute rotation of the plane
+	Speed       Vector3D // unit / seconds
+	Props       PlaneFlightProps
 }
 
 // NewPlane fill the plane with its default properties
 func NewPlane(uid uint32, arena *Arena) *Plane {
 	return &Plane{
-		uid:   uid,
-		arena: arena,
-		inputsAxes: axes{
-			roll:  0,
-			pitch: 0,
-			yaw:   0,
+		UID:   uid,
+		Arena: arena,
+		InputsAxes: Axes{
+			Roll:  0,
+			Pitch: 0,
+			Yaw:   0,
 		},
 
-		inputThrust: 0,
+		InputThrust: 0,
 
-		location: Vector3D{
-			x: 0,
-			y: 1500,
-			z: 0,
+		Location: Vector3D{
+			X: 0,
+			Y: 1500,
+			Z: 0,
 		},
-		orientation: newMatrix3(),
-		absRot: Vector3D{
-			x: 0,
-			y: 0,
-			z: 0,
+		Orientation: newMatrix3(),
+		Rotation: Vector3D{
+			X: 0,
+			Y: 0,
+			Z: 0,
 		},
-		speed: Vector3D{
-			x: 0,
-			y: 0,
-			z: 100,
+		Speed: Vector3D{
+			X: 0,
+			Y: 0,
+			Z: 100,
 		},
-		maxThrust: 70000,
-		maxRot: Vector3D{
-			x: 0.2,
-			y: 1.5,
-			z: 1.2,
+		Props: PlaneFlightProps{
+			MaxThrust: 120000,
+			MaxRotations: Vector3D{
+				X: 0.2,
+				Y: 1.5,
+				Z: 1.2,
+			},
+			Mass: 4000,
+			DragFactors: Vector3D{
+				X: 0.02,
+				Y: 0.02,
+				Z: 0.02,
+			},
 		},
-		mass: 4000,
 	}
 }
 
@@ -67,76 +87,98 @@ func NewPlane(uid uint32, arena *Arena) *Plane {
 func (p *Plane) Update(inputs []byte, deltaT float64) {
 
 	if len(inputs) > 0 { // We update those only if we have data
-		p.inputsAxes.roll = -float64(int8(inputs[1])) / 127
-		p.inputsAxes.pitch = float64(int8(inputs[2])) / 127
-		p.inputsAxes.yaw = float64(int8(inputs[3])) / 127
+		p.InputsAxes.Roll = -float64(int8(inputs[1])) / 127
+		p.InputsAxes.Pitch = float64(int8(inputs[2])) / 127
+		p.InputsAxes.Yaw = float64(int8(inputs[3])) / 127
 
-		p.inputThrust = float64(uint8(inputs[4])) / 255
+		p.InputThrust = float64(uint8(inputs[4])) / 255
 	}
 
 	// Update the rotation
-	p.orientation = p.calculateRotation(deltaT)
+	p.Orientation = p.calculateRotation(deltaT)
 
-	p.absRot = p.orientation.ToEulerAngle()
+	p.Rotation = p.Orientation.ToEulerAngle()
 
 	// Update the speed
-	p.speed = p.calculateSpeed(deltaT)
+	p.Speed = p.calculateSpeed(deltaT)
 
-	p.location.x += p.speed.x * deltaT
-	p.location.y += p.speed.y * deltaT
-	p.location.z += p.speed.z * deltaT
+	p.Location.X += p.Speed.X * deltaT
+	p.Location.Y += p.Speed.Y * deltaT
+	p.Location.Z += p.Speed.Z * deltaT
 
 	// Update the position if there is colision
 	p.correctFromCollision()
 }
 
 func (p *Plane) calculateRotation(deltaT float64) matrix3 {
-	pitchMat := makeMatrix3X(p.maxRot.x * p.inputsAxes.pitch * deltaT)
-	yawMat := makeMatrix3Y(p.maxRot.y * p.inputsAxes.yaw * deltaT)
-	rollMat := makeMatrix3Z(p.maxRot.z * p.inputsAxes.roll * deltaT)
 
+	// Generate the matrices that represent the rotation change
+	pitchMat := makeMatrix3X(p.Props.MaxRotations.X * p.InputsAxes.Pitch * deltaT)
+	yawMat := makeMatrix3Y(p.Props.MaxRotations.Y * p.InputsAxes.Yaw * deltaT)
+	rollMat := makeMatrix3Z(p.Props.MaxRotations.Z * p.InputsAxes.Roll * deltaT)
+
+	// Multiply them together in the right order
 	localRotMat := yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
 
-	return p.orientation.Mul(localRotMat)
+	return p.Orientation.Mul(localRotMat)
 }
 
 func (p *Plane) calculateSpeed(deltaT float64) Vector3D {
 
 	localAcceleration := Vector3D{
-		x: 0,
-		y: p.calculateLift(),
-		z: p.calculateThrust() - p.calculateDrag(),
+		X: 0,
+		Y: p.calculateLift(),
+		Z: p.calculateThrust(),
 	}
 
-	globalAcceleration := localAcceleration.multiplyByMatrix3(&p.orientation)
+	// Compute the drag
+	localDrag := p.calculateDrag()
+
+	// Divide the force by the mapp
+	localDrag.DivScalar(p.Props.Mass)
+
+	// Add the drag to the local acceleration
+	localAcceleration.Add(&localDrag)
+
+	// Convert to global
+	globalAcceleration := localAcceleration.multiplyByMatrix3(&p.Orientation)
 
 	// Apply gravity
-	globalAcceleration.y += -9.8
+	globalAcceleration.Y += -9.8
 
-	acceleration := globalAcceleration.MulScalar(deltaT)
+	// Multiply by the time
+	globalAcceleration.MulScalar(deltaT)
 
-	return p.speed.Add(&acceleration)
+	return p.Speed.Add(&globalAcceleration)
 }
 
 func (p *Plane) calculateLift() float64 {
 
 	// The p.inputsAxes.pitch should affect the amount of lift
 
-	return 15
+	return p.Props.LiftRange.Min + -p.InputsAxes.Pitch*(p.Props.LiftRange.Max-p.Props.LiftRange.Min)
 }
 
-// calculateDrag calculate the amount of drag
-func (p *Plane) calculateDrag() float64 {
+// calculateDrag calculate the amount of drag.
+// Please note that the force here is expressed in newtons
+func (p *Plane) calculateDrag() (drag Vector3D) {
 
-	// The p.inputsAxes should affect the amount of drag
+	localSpeed := p.getLocalSpeed()
 
-	return 0
+	airDensity := getAirDensity(p.Location.Y)
+
+	// We inveres so the forces are applied in the right directions
+	drag.X = -(p.Props.DragFactors.X * (localSpeed.X * localSpeed.X) * airDensity)
+	drag.Y = -(p.Props.DragFactors.Y * (localSpeed.Y * localSpeed.Y) * airDensity)
+	drag.Z = -(p.Props.DragFactors.Z * (localSpeed.Z * localSpeed.Z) * airDensity)
+
+	return
 }
 
 func (p *Plane) calculateThrust() float64 {
 
-	return p.inputThrust * p.maxThrust / p.mass
+	return p.InputThrust * p.Props.MaxThrust / p.Props.Mass
 
 }
 
@@ -144,34 +186,41 @@ func (p *Plane) correctFromCollision() {
 
 	const margin = 5
 
-	triangle := p.arena.arenaMap.OverredTriangle(p.location)
+	triangle := p.Arena.arenaMap.OverredTriangle(p.Location)
 
 	// We are out of bound
-	if math.IsNaN(triangle[0].x) {
+	if math.IsNaN(triangle[0].X) {
 		return
 	}
 
 	// Small optimization
-	if p.location.y >= highestInTriangle(triangle)+margin {
+	if p.Location.Y >= highestInTriangle(triangle)+margin {
 		return
 	}
 
 	// The real thing
-	h := heightOnTriangle(p.location, &triangle)
+	h := heightOnTriangle(p.Location, &triangle)
 
 	// We are under the surface
-	if p.location.y < h+margin {
+	if p.Location.Y < h+margin {
 		// We go back to the surface
-		p.location.y = h + margin
-		p.speed.y = 0
+		p.Location.Y = h + margin
+		p.Speed.Y = 0
 	}
 
 }
 
-func (p *Plane) localSpeed() Vector3D {
+func (p *Plane) getLocalSpeed() Vector3D {
 
-	inverseOrientation := p.orientation.getInverse()
+	inverseOrientation := p.Orientation.getInverse()
 
-	return p.speed.multiplyByMatrix3(&inverseOrientation)
+	return p.Speed.multiplyByMatrix3(&inverseOrientation)
 
+}
+
+// getAirDensity returns the air density at the current altitude
+func getAirDensity(altitude float64) float64 {
+
+	// HACK: always returns 1.2 for now
+	return 1.2
 }

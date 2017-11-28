@@ -39,8 +39,8 @@ func TestPlaneMovement(t *testing.T) {
 
 	p := NewPlane(1, arena)
 
-	p.location.y = 0
-	p.speed.z = 10
+	p.Location.Y = 0
+	p.Speed.Z = 10
 
 	p.calculateSpeed(1 / 60)
 
@@ -51,37 +51,37 @@ func TestLocalSpeed(t *testing.T) {
 
 	plane := NewPlane(1, arena)
 
-	plane.speed = Vector3D{
-		x: 0,
-		y: 0,
-		z: 10,
+	plane.Speed = Vector3D{
+		X: 0,
+		Y: 0,
+		Z: 10,
 	}
 
-	plane.maxRot.y = 1
-	plane.inputsAxes.yaw = math.Pi / 2
+	plane.Props.MaxRotations.Y = 1
+	plane.InputsAxes.Yaw = math.Pi / 2
 
-	plane.orientation = plane.calculateRotation(1)
+	plane.Orientation = plane.calculateRotation(1)
 
-	plane.mass = 1
+	plane.Props.Mass = 1
 
-	localSpeed := plane.localSpeed()
+	localSpeed := plane.getLocalSpeed()
 
 	predictedLocalSpeed := Vector3D{
-		x: -10,
-		y: 0,
-		z: 0,
+		X: -10,
+		Y: 0,
+		Z: 0,
 	}
 
-	if math.Abs(localSpeed.x-predictedLocalSpeed.x) > 0.0001 {
-		t.Errorf("LocalSpeed.x is different from prediction. %f != %f", float32(localSpeed.x), float32(predictedLocalSpeed.x))
+	if math.Abs(localSpeed.X-predictedLocalSpeed.X) > 0.0001 {
+		t.Errorf("LocalSpeed.x is different from prediction. %f != %f", float32(localSpeed.X), float32(predictedLocalSpeed.X))
 	}
 
-	if math.Abs(localSpeed.y-predictedLocalSpeed.y) > 0.0001 {
-		t.Errorf("LocalSpeed.y is different from prediction. %f != %f", float32(localSpeed.y), float32(predictedLocalSpeed.y))
+	if math.Abs(localSpeed.Y-predictedLocalSpeed.Y) > 0.0001 {
+		t.Errorf("LocalSpeed.y is different from prediction. %f != %f", float32(localSpeed.Y), float32(predictedLocalSpeed.Y))
 	}
 
-	if math.Abs(localSpeed.z-predictedLocalSpeed.z) > 0.0001 {
-		t.Errorf("LocalSpeed.z is different from prediction. %f != %f", float32(localSpeed.z), float32(predictedLocalSpeed.z))
+	if math.Abs(localSpeed.Z-predictedLocalSpeed.Z) > 0.0001 {
+		t.Errorf("LocalSpeed.z is different from prediction. %f != %f", float32(localSpeed.Z), float32(predictedLocalSpeed.Z))
 	}
 
 }
