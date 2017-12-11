@@ -18,26 +18,29 @@ type PlayerInput struct {
 type Player struct {
 	uid   uint32
 	input []byte
-	arena *Arena
 	conn  *websocket.Conn
 	send  chan []byte
 	plane *Plane
+	name  string
 }
 
+// TEST THIS!
 // NewPlayer returns a new player
 func NewPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
+
 	return &Player{
-		arena: a,
 		conn:  conn,
 		uid:   uid,
 		send:  make(chan []byte, 16),
-		plane: NewPlane(uid, a),
+		plane: NewPlane(uid, a.terrain),
+		name:  "player" + strconv.FormatUint(uint64(uid), 10), // TODO: manage the name
 	}
 }
 
-func (p *Player) sendPlayersList() {
+// TEST THIS!
+func (p *Player) sendPlayersList(arena *Arena) {
 
-	playersCount := len(p.arena.players)
+	playersCount := len(arena.players)
 
 	offset := 1 + 2
 
@@ -46,7 +49,7 @@ func (p *Player) sendPlayersList() {
 	message[0] = 0x4
 	binary.BigEndian.PutUint16(message[1:], uint16(playersCount))
 
-	for k := range p.arena.players {
+	for k := range arena.players {
 		binary.BigEndian.PutUint32(message[offset:], k.uid)
 		offset += 4
 	}
@@ -54,17 +57,21 @@ func (p *Player) sendPlayersList() {
 	p.send <- message
 }
 
-func (p *Player) deconnect() {
-	log.Println(strconv.FormatUint(uint64(p.uid), 10) + " deconnected.")
-	p.arena.deconect <- p
+// TEST THIS!
+func (p *Player) connect(connect chan *Player) {
+	connect <- p
+}
+
+// TEST THIS!
+func (p *Player) deconnect(deconnect chan *Player) {
+	deconnect <- p
 	p.conn.Close()
 }
 
-func (p *Player) readPump() {
+// TEST THIS!
+func (p *Player) readPump(deconect chan *Player, input chan *PlayerInput) {
 
-	defer p.deconnect()
-
-	p.arena.connect <- p
+	defer p.deconnect(deconect)
 
 	for {
 		_, message, err := p.conn.ReadMessage()
@@ -75,16 +82,18 @@ func (p *Player) readPump() {
 			break
 		}
 
-		if message[0] == 0x3 { // Plane's state update
-			p.arena.input <- &PlayerInput{plane: p.plane, data: message}
+		switch message[0] {
+		case 0x3:
+			input <- &PlayerInput{plane: p.plane, data: message}
 		}
 
 	}
 }
 
-func (p *Player) writePump() {
+// TEST THIS!
+func (p *Player) writePump(deconect chan *Player) {
 
-	defer p.deconnect()
+	defer p.deconnect(deconect)
 
 	for message := range p.send {
 
@@ -99,5 +108,14 @@ func (p *Player) writePump() {
 			return
 		}
 	}
+
+}
+
+// TEST THIS! (How ?)
+// Listen starts the message pumps
+func (p *Player) Listen(a *Arena) {
+
+	go p.readPump(a.deconect, a.input)
+	go p.writePump(a.deconect)
 
 }

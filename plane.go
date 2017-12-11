@@ -26,7 +26,7 @@ type PlaneFlightProps struct {
 // Plane describe a plane with all its properties
 type Plane struct {
 	UID         uint32
-	Arena       *Arena
+	Terrain     *Terrain
 	InputsAxes  Axes
 	InputThrust float64
 	Location    Vector3D
@@ -37,10 +37,10 @@ type Plane struct {
 }
 
 // NewPlane fill the plane with its default properties
-func NewPlane(uid uint32, arena *Arena) *Plane {
+func NewPlane(uid uint32, terrain *Terrain) *Plane {
 	return &Plane{
-		UID:   uid,
-		Arena: arena,
+		UID:     uid,
+		Terrain: terrain,
 		InputsAxes: Axes{
 			Roll:  0,
 			Pitch: 0,
@@ -186,7 +186,7 @@ func (p *Plane) correctFromCollision() {
 
 	const margin = 5
 
-	triangle := p.Arena.arenaMap.OverredTriangle(p.Location)
+	triangle := p.Terrain.OverredTriangle(p.Location)
 
 	// We are out of bound
 	if math.IsNaN(triangle[0].X) {

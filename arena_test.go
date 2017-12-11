@@ -9,11 +9,14 @@ import (
 
 func TestSnapshotGeneration(t *testing.T) {
 
-	arena := NewArena()
+	params := DefaultGameParameters()
+	terrain, _ := LoadTerrain("")
+
+	arena := NewArena(params, terrain)
 	const planesCount = 32
 
-	arena.snapshotInputs[uint32(1)] = &PlayerInput{plane: NewPlane(uint32(1), arena), data: nil}
-	arena.snapshotInputs[uint32(2)] = &PlayerInput{plane: NewPlane(uint32(2), arena), data: nil}
+	arena.snapshotInputs[uint32(1)] = &PlayerInput{plane: NewPlane(uint32(1), terrain), data: nil}
+	arena.snapshotInputs[uint32(2)] = &PlayerInput{plane: NewPlane(uint32(2), terrain), data: nil}
 
 	b := generateSnapshot(arena, 1/60)
 
@@ -36,7 +39,10 @@ func TestSnapshotGeneration(t *testing.T) {
 
 func TestConnectPlayer(t *testing.T) {
 
-	arena := NewArena()
+	params := DefaultGameParameters()
+	terrain, _ := LoadTerrain("")
+
+	arena := NewArena(params, terrain)
 
 	player := NewPlayer(1, arena, new(websocket.Conn))
 

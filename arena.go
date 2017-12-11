@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"log"
 	"math"
 	"sync"
 	"time"
@@ -14,35 +15,47 @@ const (
 
 // Arena riens
 type Arena struct {
-	players        map[*Player]bool
-	connect        chan *Player
-	deconect       chan *Player
-	input          chan *PlayerInput
-	snapshotInputs map[uint32]*PlayerInput
-	tick           uint32
-	mux            sync.Mutex
-	arenaMap       *ArenaMap
+	gameID            string
+	players           map[*Player]bool
+	connect           chan *Player
+	deconect          chan *Player
+	input             chan *PlayerInput
+	snapshotInputs    map[uint32]*PlayerInput
+	tick              uint32
+	mux               sync.Mutex
+	terrain           *Terrain
+	registeredPlayers map[uint32]*PlaneFlightProps
 }
 
+// TEST THIS!
 // NewArena return a arena with default settings
-func NewArena() *Arena {
+func NewArena(params GameParameters, terrain *Terrain) *Arena {
 
-	arenaMap := LoadArenaMap()
+	// Put all the registered players in a map
+	registeredPlayers := make(map[uint32]*PlaneFlightProps)
+
+	for _, rp := range params.Players {
+		registeredPlayers[rp.Token] = rp.FlightProps
+	}
 
 	return &Arena{
-		players:        make(map[*Player]bool),
-		connect:        make(chan *Player),
-		deconect:       make(chan *Player),
-		input:          make(chan *PlayerInput),
-		snapshotInputs: make(map[uint32]*PlayerInput),
-		tick:           0,
-		arenaMap:       &arenaMap,
+		gameID:            params.GameID,
+		players:           make(map[*Player]bool),
+		connect:           make(chan *Player),
+		deconect:          make(chan *Player),
+		input:             make(chan *PlayerInput),
+		snapshotInputs:    make(map[uint32]*PlayerInput),
+		tick:              0,
+		terrain:           terrain,
+		registeredPlayers: registeredPlayers,
 	}
 }
 
-func generateSnapshot(a *Arena, deltaT float64) []byte {
 
-	defer a.mux.Unlock()
+
+// TEST THIS!
+// TEST THIS! (How >)
+func generateSnapshot(a *Arena, deltaT float64) []byte {
 
 	// We lock the mutex because we want to make sure that nobody else append a state while the inputsPacket is made
 	a.mux.Lock()
@@ -79,6 +92,8 @@ func generateSnapshot(a *Arena, deltaT float64) []byte {
 		a.snapshotInputs[k] = &PlayerInput{plane: v.plane, data: nil}
 
 	}
+
+	a.mux.Unlock()
 
 	return snapshot
 
@@ -135,7 +150,7 @@ func (a *Arena) Broadcast(payload []byte) {
 
 func (a *Arena) connectPlayer(player *Player) {
 
-	player.sendPlayersList()
+	player.sendPlayersList(a)
 
 	a.players[player] = true
 
@@ -148,6 +163,8 @@ func (a *Arena) connectPlayer(player *Player) {
 	binary.BigEndian.PutUint32(message[1:], player.uid)
 
 	go a.Broadcast(message)
+
+	log.Println(player.name + " connected.")
 }
 
 func (a *Arena) deconnectPlayer(player *Player) {
@@ -168,4 +185,6 @@ func (a *Arena) deconnectPlayer(player *Player) {
 	}
 
 	a.mux.Unlock()
+
+	log.Println(player.name + " deconnected.")
 }

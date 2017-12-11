@@ -9,12 +9,16 @@ import (
 func BenchmarkUpdatePlane(b *testing.B) {
 	b.StopTimer()
 
-	arena := NewArena()
+	params := DefaultGameParameters()
+	terrain, _ := LoadTerrain("")
+
+	arena := NewArena(params, terrain)
+
 	const planesCount = 1
 	planes := [planesCount]*Plane{}
 
 	for x := 0; x < planesCount; x++ {
-		planes[x] = NewPlane(uint32(x), arena)
+		planes[x] = NewPlane(uint32(x), terrain)
 	}
 
 	b.StartTimer()
@@ -35,9 +39,9 @@ func BenchmarkUpdatePlane(b *testing.B) {
 
 func TestPlaneMovement(t *testing.T) {
 
-	arena := NewArena()
+	terrain, _ := LoadTerrain("")
 
-	p := NewPlane(1, arena)
+	p := NewPlane(1, terrain)
 
 	p.Location.Y = 0
 	p.Speed.Z = 10
@@ -47,9 +51,10 @@ func TestPlaneMovement(t *testing.T) {
 }
 
 func TestLocalSpeed(t *testing.T) {
-	arena := NewArena()
 
-	plane := NewPlane(1, arena)
+	terrain, _ := LoadTerrain("")
+
+	plane := NewPlane(1, terrain)
 
 	plane.Speed = Vector3D{
 		X: 0,
