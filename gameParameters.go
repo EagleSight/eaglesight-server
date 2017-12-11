@@ -5,16 +5,11 @@ import (
 	"io"
 )
 
-type registeredPlayer struct {
-	Token       uint32            `json:"token"`
-	FlightProps *PlaneFlightProps `json:"flightProps"`
-}
-
 // GameParameters contains all the parameters of the game
 type GameParameters struct {
-	GameID     string             `json:"gameId"`
-	Players    []registeredPlayer `json:"players"`
-	TerrainURL string             `json:"terrainURL"`
+	GameID     string          `json:"gameId"`
+	Players    []PlayerProfile `json:"players"`
+	TerrainURL string          `json:"terrainURL"`
 }
 
 // TEST THIS!
@@ -23,7 +18,7 @@ func DefaultGameParameters() GameParameters {
 
 	return GameParameters{
 		GameID:     "",
-		Players:    []registeredPlayer{},
+		Players:    []PlayerProfile{},
 		TerrainURL: "",
 	}
 

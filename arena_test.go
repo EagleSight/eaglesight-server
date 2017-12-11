@@ -7,10 +7,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var terrain, _ = LoadTerrain("")
+
 func TestSnapshotGeneration(t *testing.T) {
 
 	params := DefaultGameParameters()
-	terrain, _ := LoadTerrain("")
 
 	arena := NewArena(params, terrain)
 	const planesCount = 32
@@ -40,11 +41,13 @@ func TestSnapshotGeneration(t *testing.T) {
 func TestConnectPlayer(t *testing.T) {
 
 	params := DefaultGameParameters()
-	terrain, _ := LoadTerrain("")
 
 	arena := NewArena(params, terrain)
 
-	player := NewPlayer(1, arena, new(websocket.Conn))
+	profil := DefaultPlayerProfile(1)
+	plane := NewPlane(profil.Token, terrain)
+
+	player := NewPlayer(profil, plane, new(websocket.Conn))
 
 	arena.connectPlayer(player)
 

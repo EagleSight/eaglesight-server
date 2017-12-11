@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/binary"
 	"log"
 	"strconv"
 
@@ -26,43 +25,22 @@ type Player struct {
 
 // TEST THIS!
 // NewPlayer returns a new player
-func NewPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
+func NewPlayer(profil PlayerProfile, plane *Plane, conn *websocket.Conn) *Player {
 
 	return &Player{
 		conn:  conn,
-		uid:   uid,
-		send:  make(chan []byte, 16),
-		plane: NewPlane(uid, a.terrain),
-		name:  "player" + strconv.FormatUint(uint64(uid), 10), // TODO: manage the name
+		uid:   profil.Token,
+		send:  make(chan []byte),
+		plane: plane,
+		name:  "player" + strconv.FormatUint(uint64(profil.Token), 10), // TODO: manage the name
 	}
 }
 
-// TEST THIS!
-func (p *Player) sendPlayersList(players *map[*Player]bool) {
-
-	playersCount := len(*players)
-
-	offset := 1 + 2
-
-	message := make([]byte, offset+playersCount*4)
-
-	message[0] = 0x4
-	binary.BigEndian.PutUint16(message[1:], uint16(playersCount))
-
-	for k := range *players {
-		binary.BigEndian.PutUint32(message[offset:], k.uid)
-		offset += 4
-	}
-
-	p.send <- message
-}
-
-// TEST THIS!
 func (p *Player) connect(connect chan *Player) {
 	connect <- p
 }
 
-// TEST THIS!
+// TEST THIS! (mocking a connection to close?)
 func (p *Player) deconnect(deconnect chan *Player) {
 	deconnect <- p
 	p.conn.Close()
@@ -75,6 +53,7 @@ func (p *Player) readPump(deconect chan *Player, input chan *PlayerInput) {
 
 	for {
 		_, message, err := p.conn.ReadMessage()
+
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("error: %v", err)
@@ -112,8 +91,7 @@ func (p *Player) writePump(deconect chan *Player) {
 }
 
 // TEST THIS! (How ?)
-// Listen starts the message pumps
-func (p *Player) Listen(a *Arena) {
+func (p *Player) listen(a *Arena) {
 
 	go p.readPump(a.deconect, a.input)
 	go p.writePump(a.deconect)

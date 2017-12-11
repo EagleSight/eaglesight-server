@@ -46,13 +46,18 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, arena *Arena) {
 		return
 	}
 
+	playerProfile := DefaultPlayerProfile(uid)
+
 	// gameID is empty if there is no authentication needed
 	if arena.gameID != "" {
 		// Verify if the player is registered
-		if _, ok := arena.registeredPlayers[uint32(uid)]; !ok {
-			log.Println("Unauthorized player")
+		playerProfile, err = arena.TakePlayerProfile(uid)
+
+		if err != nil {
+			log.Println(err)
 			return
 		}
+
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -62,7 +67,11 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, arena *Arena) {
 		return
 	}
 
-	player := NewPlayer(uid, arena, conn)
+	plane := NewPlane(playerProfile.Token, arena.terrain)
+
+	player := NewPlayer(playerProfile, plane, conn)
+
+	player.listen(arena)
 
 	player.connect(arena.connect)
 

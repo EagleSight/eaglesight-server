@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"errors"
 	"log"
 	"math"
 	"sync"
@@ -15,16 +16,17 @@ const (
 
 // Arena riens
 type Arena struct {
-	gameID            string
-	players           map[*Player]bool
-	connect           chan *Player
-	deconect          chan *Player
-	input             chan *PlayerInput
-	snapshotInputs    map[uint32]*PlayerInput
-	tick              uint32
-	mux               sync.Mutex
-	terrain           *Terrain
-	registeredPlayers map[uint32]*PlaneFlightProps
+	gameID          string
+	players         map[*Player]bool
+	connect         chan *Player
+	deconect        chan *Player
+	input           chan *PlayerInput
+	everybody       chan []byte
+	snapshotInputs  map[uint32]*PlayerInput
+	tick            uint32
+	mux             sync.Mutex
+	terrain         *Terrain
+	PlayersProfiles map[uint32]PlayerProfile
 }
 
 // TEST THIS!
@@ -32,27 +34,42 @@ type Arena struct {
 func NewArena(params GameParameters, terrain *Terrain) *Arena {
 
 	// Put all the registered players in a map
-	registeredPlayers := make(map[uint32]*PlaneFlightProps)
+	playersProfiles := make(map[uint32]PlayerProfile)
 
 	for _, rp := range params.Players {
-		registeredPlayers[rp.Token] = rp.FlightProps
+		playersProfiles[rp.Token] = rp
 	}
 
 	return &Arena{
-		gameID:            params.GameID,
-		players:           make(map[*Player]bool),
-		connect:           make(chan *Player),
-		deconect:          make(chan *Player),
-		input:             make(chan *PlayerInput),
-		snapshotInputs:    make(map[uint32]*PlayerInput),
-		tick:              0,
-		terrain:           terrain,
-		registeredPlayers: registeredPlayers,
+		gameID:          params.GameID,
+		players:         make(map[*Player]bool),
+		connect:         make(chan *Player),
+		deconect:        make(chan *Player),
+		input:           make(chan *PlayerInput),
+		everybody:       make(chan []byte, 2),
+		snapshotInputs:  make(map[uint32]*PlayerInput),
+		tick:            0,
+		terrain:         terrain,
+		PlayersProfiles: playersProfiles,
 	}
 }
 
-// TEST THIS!
-// TEST THIS! (How >)
+func (a *Arena) TakePlayerProfile(uid uint32) (profile PlayerProfile, err error) {
+
+	a.mux.Lock()
+	defer a.mux.Unlock()
+
+	if _, ok := a.PlayersProfiles[uid]; ok {
+		profile = a.PlayersProfiles[uid]
+		delete(a.PlayersProfiles, uid)
+		return profile, nil
+	}
+
+	return profile, errors.New("Unauthorized player")
+
+}
+
+// TEST THIS! (How ?)
 func generateSnapshot(a *Arena, deltaT float64) []byte {
 
 	// We lock the mutex because we want to make sure that nobody else append a state while the inputsPacket is made
@@ -112,7 +129,7 @@ func (a *Arena) broadcastSnapshots() {
 		previousTickTime = now
 
 		// Send inputs to all the players
-		a.Broadcast(generateSnapshot(a, deltaT))
+		a.everybody <- generateSnapshot(a, deltaT)
 
 	}
 }
@@ -120,11 +137,14 @@ func (a *Arena) broadcastSnapshots() {
 // Run start the Arena
 func (a *Arena) Run() {
 
+	go a.broadcastPump()
+
 	go a.broadcastSnapshots()
 
 	for {
 		select {
 		case player := <-a.connect:
+			a.sendPlayersList(player)
 			a.connectPlayer(player)
 		case player := <-a.deconect:
 			a.deconnectPlayer(player)
@@ -137,32 +157,54 @@ func (a *Arena) Run() {
 }
 
 // Broadcast sent a []byte containing a payload to all the players
-func (a *Arena) Broadcast(payload []byte) {
+func (a *Arena) broadcastPump() {
 
 	// Send the payload to all the players
-	for p := range a.players {
-		p.send <- payload
+	for snapshot := range a.everybody {
+		for p := range a.players {
+			p.send <- snapshot
+		}
 	}
 
 }
 
+// TEST THIS!
+// Sends the list of all the connected players, including "player" itself
+func (a *Arena) sendPlayersList(player *Player) {
+
+	playersCount := len(a.players)
+
+	offset := 1 + 2
+
+	message := make([]byte, offset+playersCount*4)
+
+	message[0] = 0x4
+	binary.BigEndian.PutUint16(message[1:], uint16(playersCount))
+
+	for k := range a.players {
+		binary.BigEndian.PutUint32(message[offset:], k.uid)
+		offset += 4
+	}
+
+	player.send <- message
+}
+
 func (a *Arena) connectPlayer(player *Player) {
 
-	player.sendPlayersList(&a.players)
-
-	a.players[player] = true
+	a.mux.Lock()
 
 	a.snapshotInputs[player.uid] = &PlayerInput{plane: player.plane, data: nil}
+	a.players[player] = true
 
-	// 0x1 - player's uid ----
+	a.mux.Unlock()
+
+	// 0x1 + player's uid
 	message := make([]byte, 5)
 
 	message[0] = 0x1 // Connection
 	binary.BigEndian.PutUint32(message[1:], player.uid)
 
-	go a.Broadcast(message)
-
-	player.Listen(a)
+	a.everybody <- message
 
 	log.Println(player.name + " connected.")
 }
@@ -181,7 +223,7 @@ func (a *Arena) deconnectPlayer(player *Player) {
 		message[0] = 0x2 // Deconnection
 		binary.BigEndian.PutUint32(message[1:], player.uid)
 
-		go a.Broadcast(message)
+		a.everybody <- message
 	}
 
 	a.mux.Unlock()
