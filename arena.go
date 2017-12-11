@@ -51,8 +51,6 @@ func NewArena(params GameParameters, terrain *Terrain) *Arena {
 	}
 }
 
-
-
 // TEST THIS!
 // TEST THIS! (How >)
 func generateSnapshot(a *Arena, deltaT float64) []byte {
@@ -163,6 +161,8 @@ func (a *Arena) connectPlayer(player *Player) {
 	binary.BigEndian.PutUint32(message[1:], player.uid)
 
 	go a.Broadcast(message)
+
+	player.Listen(a)
 
 	log.Println(player.name + " connected.")
 }
