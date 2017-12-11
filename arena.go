@@ -148,7 +148,7 @@ func (a *Arena) Broadcast(payload []byte) {
 
 func (a *Arena) connectPlayer(player *Player) {
 
-	player.sendPlayersList(a)
+	player.sendPlayersList(&a.players)
 
 	a.players[player] = true
 

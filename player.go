@@ -38,9 +38,9 @@ func NewPlayer(uid uint32, a *Arena, conn *websocket.Conn) *Player {
 }
 
 // TEST THIS!
-func (p *Player) sendPlayersList(arena *Arena) {
+func (p *Player) sendPlayersList(players *map[*Player]bool) {
 
-	playersCount := len(arena.players)
+	playersCount := len(*players)
 
 	offset := 1 + 2
 
@@ -49,7 +49,7 @@ func (p *Player) sendPlayersList(arena *Arena) {
 	message[0] = 0x4
 	binary.BigEndian.PutUint16(message[1:], uint16(playersCount))
 
-	for k := range arena.players {
+	for k := range *players {
 		binary.BigEndian.PutUint32(message[offset:], k.uid)
 		offset += 4
 	}
