@@ -15,7 +15,6 @@ type Master struct {
 	secret string
 }
 
-// TEST THIS!
 // NewMaster return a Master
 func NewMaster(url string, secret string) (*Master, error) {
 
@@ -41,7 +40,7 @@ func (m *Master) getSlaveIP() string {
 }
 
 // TEST THIS!
-func (m *Master) generateAuthHashForStep(route string, secret string) string {
+func (m *Master) generateAuthHash(route string, secret string) string {
 
 	// Generate the authentication hash (secret + | + slave's IP )
 	authHash := sha1.Sum([]byte(route + "|" + secret + "|" + m.getSlaveIP()))
@@ -81,7 +80,6 @@ func (m *Master) Ready() error {
 
 	if m.IsReachable() {
 		_, err := m.message("POST", "/game/ready", []byte{})
-		//reader.Close() // We have to close the resp.Body
 		return err
 	}
 
@@ -99,7 +97,7 @@ func (m *Master) message(method string, route string, body []byte) (io.ReadClose
 		return nil, err // TODO: Is nil the right thing to return?
 	}
 
-	req.Header.Add("Auth", m.generateAuthHashForStep(route, m.secret))
+	req.Header.Add("Auth", m.generateAuthHash(route, m.secret))
 
 	client := http.Client{}
 
@@ -107,6 +105,7 @@ func (m *Master) message(method string, route string, body []byte) (io.ReadClose
 	resp, err := client.Do(req)
 
 	if err != nil {
+		resp.Body.Close()
 		return nil, err // TODO: Is nil the right thing to return?
 	}
 

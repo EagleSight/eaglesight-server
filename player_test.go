@@ -6,15 +6,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func Connect(t *testing.T) {
+func TestConnect(t *testing.T) {
 
 	profil := DefaultPlayerProfile(1)
 	plane := NewPlane(profil.Token, terrain)
 
 	player := NewPlayer(profil, plane, new(websocket.Conn)) //
-	ch := make(chan *Player, 2)
+	ch := make(chan *Player)
 
-	player.connect(ch)
+	go player.connect(ch)
 
 	p := <-ch
 

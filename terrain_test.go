@@ -2,10 +2,6 @@ package main
 
 import "testing"
 
-func TestOveredTriangle(t *testing.T) {
-
-}
-
 func TestLoad(t *testing.T) {
 
 	terrain, err := LoadTerrain("")
