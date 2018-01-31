@@ -65,8 +65,7 @@ func (m *Master) IsReachable() bool {
 	return true
 }
 
-// TEST THIS!
-// FetchParameters fetch the game parameters from the master
+// FetchParameters fetch the game parameters from the master (TEST THIS!)
 func (m *Master) FetchParameters() (io.ReadCloser, error) {
 
 	reader, err := m.message("GET", "/game/parameters", []byte{})
@@ -74,8 +73,7 @@ func (m *Master) FetchParameters() (io.ReadCloser, error) {
 	return reader, err
 }
 
-// TEST THIS!
-// Ready notifies the master that the server is ready
+// Ready notifies the master that the server is ready (TEST THIS!)
 func (m *Master) Ready() error {
 
 	if m.IsReachable() {

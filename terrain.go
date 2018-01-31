@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"math"
-	"net/http"
 	"os"
 )
 
@@ -17,17 +16,10 @@ type Terrain struct {
 	points   []uint16
 }
 
-// TEST THIS! (How?)
-// LoadTerrain loads the terrain
-func LoadTerrain(downloadURL string) (*Terrain, error) {
+// LoadTerrain loads the terrain (TEST THIS! (How?))
+func LoadTerrain() (*Terrain, error) {
 
-	var terrainReader io.ReadCloser
-
-	if downloadURL == "" {
-		terrainReader = getTerrainFromFile()
-	} else {
-		terrainReader = getTerrainFromNetwork(downloadURL)
-	}
+	terrainReader := getTerrainFromFile()
 
 	defer terrainReader.Close()
 
@@ -42,18 +34,6 @@ func getTerrainFromFile() io.ReadCloser {
 	}
 
 	return reader
-}
-
-// TEST THIS!
-func getTerrainFromNetwork(downloadURL string) io.ReadCloser {
-	// Get the map by the network
-	resp, err := http.Get(downloadURL)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return resp.Body
 }
 
 // TEST THIS! (That is loads correctly)

@@ -9,23 +9,19 @@ type Axes struct {
 	Roll, Pitch, Yaw float64
 }
 
-type minMax struct {
-	Min float64 `json:"min"`
-	Max float64 `json:"max"`
-}
-
-// PlaneFlightProps are all the constant properties that can easily be loaded from a JSON object
-type PlaneFlightProps struct {
+// PlaneModel are all the constant properties that can easily be loaded from a JSON object
+type PlaneModel struct {
 	MaxThrust    float64  `json:"maxThrust"`
 	Mass         float64  `json:"mass"`
 	MaxRotations Vector3D `json:"maxRotations"` // All in radians / seconds
 	DragFactors  Vector3D `json:"dragFactors"`  // A drag factor are "Area * Drag Coeficient * 0.5" of a side
-	LiftRange    minMax   `json:"liftRange"`
+	LiftMin      float64  `json:"liftMin"`
+	LiftMax      float64  `json:"liftMax"`
 }
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	UID         uint32
+	UID         uint8
 	Terrain     *Terrain
 	InputsAxes  Axes
 	InputThrust float64
@@ -33,11 +29,11 @@ type Plane struct {
 	Orientation matrix3
 	Rotation    Vector3D // Absolute rotation of the plane
 	Speed       Vector3D // unit / seconds
-	Props       PlaneFlightProps
+	Model       PlaneModel
 }
 
 // NewPlane fill the plane with its default properties
-func NewPlane(uid uint32, terrain *Terrain) *Plane {
+func NewPlane(uid uint8, terrain *Terrain, model PlaneModel) *Plane {
 	return &Plane{
 		UID:     uid,
 		Terrain: terrain,
@@ -65,20 +61,7 @@ func NewPlane(uid uint32, terrain *Terrain) *Plane {
 			Y: 0,
 			Z: 100,
 		},
-		Props: PlaneFlightProps{
-			MaxThrust: 120000,
-			MaxRotations: Vector3D{
-				X: 0.2,
-				Y: 1.5,
-				Z: 1.2,
-			},
-			Mass: 4000,
-			DragFactors: Vector3D{
-				X: 0.02,
-				Y: 0.02,
-				Z: 0.02,
-			},
-		},
+		Model: model,
 	}
 }
 
@@ -113,9 +96,9 @@ func (p *Plane) Update(inputs []byte, deltaT float64) {
 func (p *Plane) calculateRotation(deltaT float64) matrix3 {
 
 	// Generate the matrices that represent the rotation change
-	pitchMat := makeMatrix3X(p.Props.MaxRotations.X * p.InputsAxes.Pitch * deltaT)
-	yawMat := makeMatrix3Y(p.Props.MaxRotations.Y * p.InputsAxes.Yaw * deltaT)
-	rollMat := makeMatrix3Z(p.Props.MaxRotations.Z * p.InputsAxes.Roll * deltaT)
+	pitchMat := makeMatrix3X(p.Model.MaxRotations.X * p.InputsAxes.Pitch * deltaT)
+	yawMat := makeMatrix3Y(p.Model.MaxRotations.Y * p.InputsAxes.Yaw * deltaT)
+	rollMat := makeMatrix3Z(p.Model.MaxRotations.Z * p.InputsAxes.Roll * deltaT)
 
 	// Multiply them together in the right order
 	localRotMat := yawMat.Mul(pitchMat)
@@ -135,8 +118,8 @@ func (p *Plane) calculateSpeed(deltaT float64) Vector3D {
 	// Compute the drag
 	localDrag := p.calculateDrag()
 
-	// Divide the force by the mapp
-	localDrag.DivScalar(p.Props.Mass)
+	// Divide the force by the mass
+	localDrag.DivScalar(p.Model.Mass)
 
 	// Add the drag to the local acceleration
 	localAcceleration.Add(&localDrag)
@@ -157,7 +140,7 @@ func (p *Plane) calculateLift() float64 {
 
 	// The p.inputsAxes.pitch should affect the amount of lift
 
-	return p.Props.LiftRange.Min + -p.InputsAxes.Pitch*(p.Props.LiftRange.Max-p.Props.LiftRange.Min)
+	return p.Model.LiftMin + -p.InputsAxes.Pitch*(p.Model.LiftMax-p.Model.LiftMin)
 }
 
 // calculateDrag calculate the amount of drag.
@@ -169,16 +152,16 @@ func (p *Plane) calculateDrag() (drag Vector3D) {
 	airDensity := getAirDensity(p.Location.Y)
 
 	// We inveres so the forces are applied in the right directions
-	drag.X = -(p.Props.DragFactors.X * (localSpeed.X * localSpeed.X) * airDensity)
-	drag.Y = -(p.Props.DragFactors.Y * (localSpeed.Y * localSpeed.Y) * airDensity)
-	drag.Z = -(p.Props.DragFactors.Z * (localSpeed.Z * localSpeed.Z) * airDensity)
+	drag.X = -(p.Model.DragFactors.X * (localSpeed.X * localSpeed.X) * airDensity)
+	drag.Y = -(p.Model.DragFactors.Y * (localSpeed.Y * localSpeed.Y) * airDensity)
+	drag.Z = -(p.Model.DragFactors.Z * (localSpeed.Z * localSpeed.Z) * airDensity)
 
 	return
 }
 
 func (p *Plane) calculateThrust() float64 {
 
-	return p.InputThrust * p.Props.MaxThrust / p.Props.Mass
+	return p.InputThrust * p.Model.MaxThrust / p.Model.Mass
 
 }
 
@@ -221,6 +204,6 @@ func (p *Plane) getLocalSpeed() Vector3D {
 // getAirDensity returns the air density at the current altitude
 func getAirDensity(altitude float64) float64 {
 
-	// HACK: always returns 1.2 for now
+	// HACK: always returns 1.2
 	return 1.2
 }

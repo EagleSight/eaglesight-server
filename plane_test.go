@@ -10,7 +10,7 @@ func BenchmarkUpdatePlane(b *testing.B) {
 	b.StopTimer()
 
 	params := DefaultGameParameters()
-	terrain, _ := LoadTerrain("")
+	terrain, _ := LoadTerrain()
 
 	arena := NewArena(params, terrain)
 
@@ -18,7 +18,7 @@ func BenchmarkUpdatePlane(b *testing.B) {
 	planes := [planesCount]*Plane{}
 
 	for x := 0; x < planesCount; x++ {
-		planes[x] = NewPlane(uint32(x), terrain)
+		planes[x] = NewPlane(uint8(x), terrain, PlaneModel{})
 	}
 
 	b.StartTimer()
@@ -28,7 +28,7 @@ func BenchmarkUpdatePlane(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 
 		for x := 0; x < planesCount; x++ {
-			arena.snapshotInputs[uint32(x)] = &PlayerInput{plane: planes[x], data: []byte{3, 4, 4, 4, 4}}
+			arena.snapshotInputs[uint8(x)] = &PlayerInput{plane: planes[x], data: []byte{3, 4, 4, 4, 4}}
 		}
 
 		generateSnapshot(arena, deltaT)
@@ -39,9 +39,9 @@ func BenchmarkUpdatePlane(b *testing.B) {
 
 func TestPlaneMovement(t *testing.T) {
 
-	terrain, _ := LoadTerrain("")
+	terrain, _ := LoadTerrain()
 
-	p := NewPlane(1, terrain)
+	p := NewPlane(1, terrain, PlaneModel{})
 
 	p.Location.Y = 0
 	p.Speed.Z = 10
@@ -52,9 +52,9 @@ func TestPlaneMovement(t *testing.T) {
 
 func TestLocalSpeed(t *testing.T) {
 
-	terrain, _ := LoadTerrain("")
+	terrain, _ := LoadTerrain()
 
-	plane := NewPlane(1, terrain)
+	plane := NewPlane(1, terrain, PlaneModel{})
 
 	plane.Speed = Vector3D{
 		X: 0,
@@ -62,12 +62,12 @@ func TestLocalSpeed(t *testing.T) {
 		Z: 10,
 	}
 
-	plane.Props.MaxRotations.Y = 1
+	plane.Model.MaxRotations.Y = 1
 	plane.InputsAxes.Yaw = math.Pi / 2
 
 	plane.Orientation = plane.calculateRotation(1)
 
-	plane.Props.Mass = 1
+	plane.Model.Mass = 1
 
 	localSpeed := plane.getLocalSpeed()
 

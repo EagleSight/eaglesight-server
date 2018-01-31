@@ -4,7 +4,7 @@ import "testing"
 
 func TestLoad(t *testing.T) {
 
-	terrain, err := LoadTerrain("")
+	terrain, err := LoadTerrain()
 
 	if err != nil {
 		t.Error("Problem while loading terrain")

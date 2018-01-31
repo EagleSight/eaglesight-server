@@ -1,0 +1,27 @@
+{
+    "gameId": "123456",
+    "players": [
+        {
+            "username": "Test Player in config file",
+            "token": "test",
+            "model": {
+                "id": "0303030303",
+                "name": "Big fat plane",
+                "maxThrust": 10000,
+                "mass": 4000,
+                "maxRotations": {
+                    "x": 1.570796326794897,
+                    "y": 0.785398163397448,
+                    "z": 1.570796326794897
+                },
+                "dragFactors": {
+                    "x": 0.04,
+                    "y": 0.04,
+                    "z": 0.04
+                },
+                "liftMin": 0.5,
+                "liftMax": 5
+            }
+        }
+    ]
+}

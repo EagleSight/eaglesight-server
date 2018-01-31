@@ -2,42 +2,32 @@ package main
 
 import (
 	"encoding/json"
-	"io"
+	"log"
+	"os"
 )
 
 // GameParameters contains all the parameters of the game
 type GameParameters struct {
-	GameID     string          `json:"gameId"`
-	Players    []PlayerProfile `json:"players"`
-	TerrainURL string          `json:"terrainURL"`
+	GameID  string   `json:"gameId"`
+	Players []Player `json:"players"`
 }
 
-// TEST THIS!
-// DefaultGameParameters return the default parameters of a game
-func DefaultGameParameters() GameParameters {
+// LoadGameParametersFromFile load the parameters of a game from a local JSON file (TEST THIS?)
+func LoadGameParametersFromFile() GameParameters {
 
-	return GameParameters{
-		GameID:     "",
-		Players:    []PlayerProfile{},
-		TerrainURL: "",
+	reader, err := os.Open("./game.json")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-}
-
-// TEST THIS!
-// DecodeAndUpdate decode the parameters of a game
-func (gp *GameParameters) DecodeAndUpdate(src io.ReadCloser) error {
-
-	defer src.Close()
+	defer reader.Close()
 
 	data := GameParameters{}
 
 	// Decode the json
-	if err := json.NewDecoder(src).Decode(data); err != nil {
-		return nil
+	if err := json.NewDecoder(reader).Decode(&data); err != nil {
+		log.Fatal(err)
 	}
 
-	gp = &data
-
-	return nil
+	return data
 }

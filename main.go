@@ -1,12 +1,9 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -17,49 +14,29 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 2048,
 }
 
-func extractUID(query string) (uint32, error) {
-
-	i := strings.Index(query, "uid=")
-
-	if i == -1 {
-		return 0, errors.New("'uid' param is not specified")
-	}
-
-	uid, err := strconv.ParseUint(strings.SplitAfter(query, "uid=")[1], 10, 32)
-
-	if err != nil {
-		return 0, errors.New("'uid' param was not a number")
-	}
-
-	return uint32(uid), nil
-
-}
-
 func webSocketHandler(w http.ResponseWriter, r *http.Request, arena *Arena) {
 
+	// ???
 	r.Header.Del("Origin")
 
-	uid, err := extractUID(r.URL.RawQuery)
+	// Retrive the "uuid" params from the URL
+	uuid := r.FormValue("uuid")
 
+	if uuid == "" {
+		log.Println("No uuid provided")
+		return
+	}
+
+	// Verify if the player is registered
+	player, uid, err := arena.ValidatePlayer(uuid)
+
+	// Something happened while retriving the player's infos
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	playerProfile := DefaultPlayerProfile(uid)
-
-	// gameID is empty if there is no authentication needed
-	if arena.gameID != "" {
-		// Verify if the player is registered
-		playerProfile, err = arena.TakePlayerProfile(uid)
-
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-	}
-
+	// Upgrade the websocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
@@ -67,13 +44,13 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, arena *Arena) {
 		return
 	}
 
-	plane := NewPlane(playerProfile.Token, arena.terrain)
+	plane := NewPlane(uid, arena.terrain, player.Model)
 
-	player := NewPlayer(playerProfile, plane, conn)
+	playerConn := NewPlayerConn(player, plane, conn)
 
-	player.listen(arena)
+	playerConn.listen(arena)
 
-	player.connect(arena.connect)
+	playerConn.connect(arena.connect)
 
 }
 
@@ -85,21 +62,15 @@ func main() {
 	master, err := NewMaster(*masterURL, *secret)
 
 	//  Init the game params with the default (dev) settings
-	gameParams := DefaultGameParameters()
+	gameParams := LoadGameParametersFromFile()
 
 	// Only there is a master
 	if master.IsReachable() {
-		paramsSrc, err := master.FetchParameters()
 
-		if err != nil {
-			log.Fatal(err) // TODO: Handle this
-		}
-
-		gameParams.DecodeAndUpdate(paramsSrc)
 	}
 
 	// Get the terrain
-	terrain, err := LoadTerrain(gameParams.TerrainURL)
+	terrain, err := LoadTerrain()
 
 	if err != nil {
 		log.Fatal(err) // TODO: Handle this
