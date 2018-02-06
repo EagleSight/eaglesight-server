@@ -1,4 +1,4 @@
-package main
+package game
 
 import (
 	"encoding/json"
@@ -6,14 +6,14 @@ import (
 	"os"
 )
 
-// GameParameters contains all the parameters of the game
-type GameParameters struct {
-	GameID  string   `json:"gameId"`
-	Players []Player `json:"players"`
+// Parameters contains all the parameters of the game
+type Parameters struct {
+	GameID  string          `json:"gameId"`
+	Players []PlayerProfile `json:"profiles"`
 }
 
 // LoadGameParametersFromFile load the parameters of a game from a local JSON file (TEST THIS?)
-func LoadGameParametersFromFile() GameParameters {
+func LoadGameParametersFromFile() Parameters {
 
 	reader, err := os.Open("./game.json")
 	if err != nil {
@@ -22,7 +22,7 @@ func LoadGameParametersFromFile() GameParameters {
 
 	defer reader.Close()
 
-	data := GameParameters{}
+	data := Parameters{}
 
 	// Decode the json
 	if err := json.NewDecoder(reader).Decode(&data); err != nil {

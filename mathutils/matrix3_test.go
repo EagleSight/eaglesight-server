@@ -1,4 +1,4 @@
-package main
+package mathutils
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 
 func TestMatrix3Inv(t *testing.T) {
 
-	m := newMatrix3()
+	m := NewMatrix3()
 
 	m._11 = 1
 	m._12 = 0
@@ -21,9 +21,9 @@ func TestMatrix3Inv(t *testing.T) {
 	m._32 = 3
 	m._33 = 1
 
-	inverse := m.getInverse()
+	inverse := m.GetInverse()
 
-	var truth matrix3
+	var truth Matrix3
 
 	truth._11 = -1.0 / 9.0
 	truth._12 = -2.0 / 3.0
@@ -57,8 +57,8 @@ func TestMatrix3Inv(t *testing.T) {
 
 func TestMatrix3Mul(t *testing.T) {
 
-	var m1 matrix3
-	var m2 matrix3
+	var m1 Matrix3
+	var m2 Matrix3
 
 	// Fill m1
 	m1._11 = 1
@@ -88,7 +88,7 @@ func TestMatrix3Mul(t *testing.T) {
 
 	result := m1.Mul(m2)
 
-	var truth matrix3
+	var truth Matrix3
 
 	truth._11 = 14
 	truth._12 = 8
@@ -128,9 +128,9 @@ func TestMatrixToEulerAngle(t *testing.T) {
 	y1 := 0.00212
 	z1 := 0.00212
 
-	pitchMat := makeMatrix3X(x1)
-	yawMat := makeMatrix3Y(y1)
-	rollMat := makeMatrix3Z(z1)
+	pitchMat := MakeMatrix3X(x1)
+	yawMat := MakeMatrix3Y(y1)
+	rollMat := MakeMatrix3Z(z1)
 
 	localRotMat := yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
@@ -155,9 +155,9 @@ func TestMatrixToEulerAngle(t *testing.T) {
 	y1 = 0
 	z1 = 0
 
-	pitchMat = makeMatrix3X(x1)
-	yawMat = makeMatrix3Y(y1)
-	rollMat = makeMatrix3Z(z1)
+	pitchMat = MakeMatrix3X(x1)
+	yawMat = MakeMatrix3Y(y1)
+	rollMat = MakeMatrix3Z(z1)
 
 	localRotMat = yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
@@ -169,7 +169,7 @@ func TestMatrixToEulerAngle(t *testing.T) {
 	}
 
 	if y1 != v2.Y {
-		t.Errorf("y1 is different for singular  from y2: %f != %f", y1, v2.Y)
+		t.Errorf("y1 is different for singular from y2: %f != %f", y1, v2.Y)
 	}
 
 	if z1 != 0 {

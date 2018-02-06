@@ -1,11 +1,12 @@
-package main
+package world
 
 import (
 	"encoding/binary"
-	"io"
 	"log"
 	"math"
 	"os"
+
+	"github.com/eaglesight/eaglesight-backend/mathutils"
 )
 
 // Terrain ...
@@ -16,28 +17,15 @@ type Terrain struct {
 	points   []uint16
 }
 
-// LoadTerrain loads the terrain (TEST THIS! (How?))
-func LoadTerrain() (*Terrain, error) {
+// LoadTerrain loads the terrain
+func LoadTerrain() (Terrain, error) {
 
-	terrainReader := getTerrainFromFile()
-
-	defer terrainReader.Close()
-
-	return loadTerrain(terrainReader)
-}
-
-// TEST THIS!
-func getTerrainFromFile() io.ReadCloser {
 	reader, err := os.Open("./map.esmap")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return reader
-}
-
-// TEST THIS! (That is loads correctly)
-func loadTerrain(src io.ReadCloser) (*Terrain, error) {
+	defer reader.Close()
 
 	t := Terrain{
 		width:    0,
@@ -48,10 +36,10 @@ func loadTerrain(src io.ReadCloser) (*Terrain, error) {
 	// We read the header
 	header := make([]byte, 2+2+2+4)
 
-	_, err := src.Read(header[:])
+	_, err = reader.Read(header[:])
 
 	if err != nil {
-		return &t, err
+		return t, err
 	}
 
 	// Load the width
@@ -69,21 +57,20 @@ func loadTerrain(src io.ReadCloser) (*Terrain, error) {
 	data := make([]byte, 2)
 	for i := 0; i < len(t.points); i++ {
 
-		_, err := src.Read(data)
+		_, err := reader.Read(data)
 
 		if err != nil {
-			return &t, err
+			return t, err
 		}
 
 		t.points[i] = binary.LittleEndian.Uint16(data)
 	}
 
-	return &t, nil
-
+	return t, nil
 }
 
 // OverredTriangle find the triangle that is overred by the vector pos. Return a triangle made of 3 Vector3D
-func (t *Terrain) OverredTriangle(pos Vector3D) (s [3]Vector3D) {
+func (t *Terrain) OverredTriangle(pos mathutils.Vector3D) (s [3]mathutils.Vector3D) {
 
 	// 0 1
 	// 2 3

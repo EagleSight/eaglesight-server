@@ -1,12 +1,12 @@
-package main
+package game
 
 import (
 	"bytes"
-	"crypto/sha1"
-	"encoding/base64"
 	"io"
+	"log"
 	"net"
 	"net/http"
+	"time"
 )
 
 // Master is an abstraction to the host that coordinate everything
@@ -39,16 +39,6 @@ func (m *Master) getSlaveIP() string {
 	return conn.LocalAddr().(*net.UDPAddr).IP.String()
 }
 
-// TEST THIS!
-func (m *Master) generateAuthHash(route string, secret string) string {
-
-	// Generate the authentication hash (secret + | + slave's IP )
-	authHash := sha1.Sum([]byte(route + "|" + secret + "|" + m.getSlaveIP()))
-
-	// Encode it to base64
-	return base64.StdEncoding.EncodeToString(authHash[:])
-}
-
 // IsReachable detect if there is a master to reach
 func (m *Master) IsReachable() bool {
 
@@ -65,23 +55,34 @@ func (m *Master) IsReachable() bool {
 	return true
 }
 
-// FetchParameters fetch the game parameters from the master (TEST THIS!)
-func (m *Master) FetchParameters() (io.ReadCloser, error) {
+// Ready notifies the master that the server is ready (TEST THIS!)
+func (m *Master) Ready() {
 
-	reader, err := m.message("GET", "/game/parameters", []byte{})
+	go func() {
 
-	return reader, err
+		// Sleep for a second
+		time.Sleep(time.Second)
+
+		if m.IsReachable() {
+			_, err := m.message("POST", "/game/ready", []byte{})
+
+			// TODO: Find a way to notice the maintainer if the master can't be contacted
+			log.Fatalf("Failed to tell the master that we started. Ending the process now.\n %s\n", err)
+		}
+
+	}()
+
 }
 
-// Ready notifies the master that the server is ready (TEST THIS!)
-func (m *Master) Ready() error {
+// Stop tells the master to shutdown this droplet
+func (m *Master) Stop() {
 
 	if m.IsReachable() {
-		_, err := m.message("POST", "/game/ready", []byte{})
-		return err
-	}
+		_, err := m.message("DELETE", "/game", []byte{})
 
-	return nil
+		// TODO: Find a way to notice the maintainer if the master can't be contacted
+		log.Fatalf("Failed to tell the master that we started. Ending the process now.\n %s\n", err)
+	}
 
 }
 
@@ -95,7 +96,7 @@ func (m *Master) message(method string, route string, body []byte) (io.ReadClose
 		return nil, err // TODO: Is nil the right thing to return?
 	}
 
-	req.Header.Add("Auth", m.generateAuthHash(route, m.secret))
+	req.Header.Add("Auth", m.secret)
 
 	client := http.Client{}
 
@@ -108,9 +109,4 @@ func (m *Master) message(method string, route string, body []byte) (io.ReadClose
 	}
 
 	return resp.Body, nil
-}
-
-// Disengage tells the master to shutdown this droplet
-func (m *Master) Disengage() {
-
 }

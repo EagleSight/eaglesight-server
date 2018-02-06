@@ -1,20 +1,20 @@
-package main
+package mathutils
 
 import "testing"
 import "math"
 
 func TestMultiplyByMatrix3(t *testing.T) {
 
-	pitchMat := makeMatrix3X(0)
-	yawMat := makeMatrix3Y(math.Pi / 2)
-	rollMat := makeMatrix3Z(0)
+	pitchMat := MakeMatrix3X(0)
+	yawMat := MakeMatrix3Y(math.Pi / 2)
+	rollMat := MakeMatrix3Z(0)
 
-	orientation := newMatrix3()
+	orientation := NewMatrix3()
 
 	localRotMat := yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
 
-	localRotMat = localRotMat.getInverse()
+	localRotMat = localRotMat.GetInverse()
 
 	rotMat := localRotMat.Mul(localRotMat)
 
@@ -52,7 +52,7 @@ func TestHeightOnTriangle(t *testing.T) {
 		},
 	}
 
-	y := heightOnTriangle(point, &triangle)
+	y := HeightOnTriangle(point, &triangle)
 
 	if y != 1.0 {
 		t.Errorf("y = %f, not 1.0", y)
@@ -78,7 +78,7 @@ func TestHeightOnTriangle(t *testing.T) {
 		},
 	}
 
-	y = heightOnTriangle(point, &triangle)
+	y = HeightOnTriangle(point, &triangle)
 
 	if y != 2.0 {
 		t.Errorf("y = %f, not 2.0", y)

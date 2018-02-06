@@ -1,15 +1,17 @@
-package main
+package mathutils
 
 import "math"
 
-type matrix3 struct {
+// Matrix3 is a 3x3 matrix
+type Matrix3 struct {
 	_11, _12, _13 float64
 	_21, _22, _23 float64
 	_31, _32, _33 float64
 }
 
-func newMatrix3() matrix3 {
-	return matrix3{
+// NewMatrix3 create a new Matrix3
+func NewMatrix3() Matrix3 {
+	return Matrix3{
 		_11: 1,
 		_12: 0,
 		_13: 0,
@@ -22,7 +24,8 @@ func newMatrix3() matrix3 {
 	}
 }
 
-func (m *matrix3) getInverse() matrix3 {
+// GetInverse return the inverse of a Matrix3
+func (m *Matrix3) GetInverse() Matrix3 {
 
 	n := *m
 
@@ -68,8 +71,8 @@ func (m *matrix3) getInverse() matrix3 {
 	return n
 }
 
-func makeMatrix3X(angle float64) matrix3 {
-	var mat matrix3
+func MakeMatrix3X(angle float64) Matrix3 {
+	var mat Matrix3
 
 	mat._11 = 1
 	mat._12 = 0
@@ -86,8 +89,8 @@ func makeMatrix3X(angle float64) matrix3 {
 	return mat
 }
 
-func makeMatrix3Y(angle float64) matrix3 {
-	var mat matrix3
+func MakeMatrix3Y(angle float64) Matrix3 {
+	var mat Matrix3
 
 	mat._11 = math.Cos(angle)
 	mat._12 = 0
@@ -104,8 +107,8 @@ func makeMatrix3Y(angle float64) matrix3 {
 	return mat
 }
 
-func makeMatrix3Z(angle float64) matrix3 {
-	var mat matrix3
+func MakeMatrix3Z(angle float64) Matrix3 {
+	var mat Matrix3
 
 	mat._11 = math.Cos(angle)
 	mat._12 = -math.Sin(angle)
@@ -122,9 +125,10 @@ func makeMatrix3Z(angle float64) matrix3 {
 	return mat
 }
 
-func (m *matrix3) Mul(m2 matrix3) matrix3 {
+// Mul multiplies a Matrix3 by m2 (also a Matrix3)
+func (m *Matrix3) Mul(m2 Matrix3) Matrix3 {
 
-	var r matrix3
+	var r Matrix3
 
 	r._11 = m._11*m2._11 + m._12*m2._21 + m._13*m2._31
 	r._12 = m._11*m2._12 + m._12*m2._22 + m._13*m2._32
@@ -142,7 +146,8 @@ func (m *matrix3) Mul(m2 matrix3) matrix3 {
 
 }
 
-func (m *matrix3) ToEulerAngle() (v Vector3D) {
+// ToEulerAngle convert a Matrix3 to Euler's angles
+func (m *Matrix3) ToEulerAngle() (v Vector3D) {
 
 	v.Z = math.Asin(math.Max(-1, math.Min(1, m._21)))
 

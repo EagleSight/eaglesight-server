@@ -1,18 +1,41 @@
 {
     "gameId": "123456",
-    "players": [
+    "profiles": [
         {
-            "username": "Test Player in config file",
-            "token": "test",
-            "model": {
-                "id": "0303030303",
+            "username": "skydevil666",
+            "accessKey": "test",
+            "uid": 1,
+            "planeModel": {
                 "name": "Big fat plane",
-                "maxThrust": 10000,
+                "maxThrust": 50000,
                 "mass": 4000,
                 "maxRotations": {
-                    "x": 1.570796326794897,
-                    "y": 0.785398163397448,
-                    "z": 1.570796326794897
+                    "x": 0.314159265358979,
+                    "y": 0.314159265358979,
+                    "z": 1
+                },
+                "dragFactors": {
+                    "x": 0.05,
+                    "y": 0.005,
+                    "z": 0.05
+                },
+                "liftMin": 0.0005,
+                "liftMax": 0.0007,
+                "defaultSpeed": 150
+            }
+        },
+        {
+            "username": "her_felix",
+            "accessKey": "yoyo",
+            "uid": 2,
+            "planeModel": {
+                "name": "Big fat plane",
+                "maxThrust": 50000,
+                "mass": 4000,
+                "maxRotations": {
+                    "x": 0.314159265358979,
+                    "y": 0.314159265358979,
+                    "z": 0.314159265358979
                 },
                 "dragFactors": {
                     "x": 0.04,
@@ -20,7 +43,8 @@
                     "z": 0.04
                 },
                 "liftMin": 0.5,
-                "liftMax": 5
+                "liftMax": 5,
+                "defaultSpeed": 150
             }
         }
     ]
