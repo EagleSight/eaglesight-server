@@ -14,20 +14,17 @@ type Parameters struct {
 
 // LoadGameParametersFromFile load the parameters of a game from a local JSON file (TEST THIS?)
 func LoadGameParametersFromFile() Parameters {
-
 	reader, err := os.Open("./game.json")
+
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer reader.Close()
-
 	data := Parameters{}
 
 	// Decode the json
 	if err := json.NewDecoder(reader).Decode(&data); err != nil {
 		log.Fatal(err)
 	}
-
 	return data
 }

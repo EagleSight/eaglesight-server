@@ -2,62 +2,131 @@ package world
 
 import (
 	"log"
+	"time"
 )
 
-// State ...
-type State struct {
-	Planes []PlaneState
+// PlayerInput contains input data and the uid to which it is attributed
+type PlayerInput struct {
+	UID  uint8
+	Data []byte
+}
+
+// PlayerModel contains the Model of a plane and
+// the UID of the plane to be created from the model
+type PlayerModel struct {
+	UID   uint8
+	Model PlaneModel
 }
 
 // World World is which everything happens
 type World struct {
-	terrain Terrain
-	planes  []*Plane
+	Input     chan PlayerInput
+	Snapshots chan []byte
+	Join      chan PlayerModel
+	End       chan bool // End the world
+	gun       chan Bullet
+	terrain   *Terrain
+	planes    map[uint8]*Plane
+	bullets   []*Bullet
 }
 
 // NewWorld Creates a new world
-func NewWorld() *World {
-
-	// Try to load the terrain
-	log.Print("Loading terrain... ")
-	terrain, err := LoadTerrain()
-	log.Println("DONE")
-
-	if err != nil {
-		log.Fatalln(err)
-	}
+func NewWorld(terrain *Terrain) *World {
 
 	world := &World{
-		terrain: terrain,
-		planes:  []*Plane{},
+		terrain:   terrain,
+		planes:    make(map[uint8]*Plane),
+		Snapshots: make(chan []byte, 1),
+		Input:     make(chan PlayerInput),
+		Join:      make(chan PlayerModel),
+		End:       make(chan bool),
+		gun:       make(chan Bullet),
 	}
-
 	return world
 }
 
-// AddPlane Add a plane to the world
-func (w *World) AddPlane(uid uint8, model PlaneModel) (chan PlaneInput, error) {
-
-	plane := NewPlane(uid, model)
-
-	w.planes = append(w.planes, plane)
-
-	return plane.inputs, nil
+// addPlane add a plane to the world
+func (w *World) addPlane(uid uint8, model PlaneModel, gun chan<- Bullet) {
+	// Check if the plane already exists in the world
+	w.planes[uid] = NewPlane(uid, model, gun)
 }
 
-// Tick simulate a tick in the world
-func (w *World) Tick(deltaT float64) (state State) {
+// addBullet add the bullet in the world
+func (w *World) addBullet(bullet *Bullet) {
 
-	state.Planes = []PlaneState{}
+	w.bullets = append(w.bullets, bullet)
+}
 
-	for i, plane := range w.planes {
-		if plane.isDead() {
-			w.planes = append(w.planes[:i], w.planes[i+1:]...)
-			continue
+// applyInput apply a UserInput to a plane in the world
+func (w *World) applyInput(input *PlayerInput) {
+
+	plane, exists := w.planes[input.UID]
+
+	if exists {
+		plane.Write(input.Data) // So the plane can process the data by itself
+	}
+}
+
+// updateWorld updates the states of all the entities in the world
+func (w *World) updateWorld(deltaT float64) time.Time {
+
+	bulletsStillAlive := []*Bullet{}
+
+	// Update all the bullets
+	for _, bullet := range w.bullets {
+
+		if bullet.Update(deltaT) {
+			// The bullet is still alive. It goes to the next round.
+			bulletsStillAlive = append(bulletsStillAlive, bullet)
+		}
+	}
+	w.bullets = bulletsStillAlive
+
+	// Update all the planes
+	for _, plane := range w.planes {
+		plane.Update(deltaT, w.terrain)
+	}
+	return time.Now()
+}
+
+// generateSnapshots generate a snapshot of the whole world
+func (w *World) generateSnapshots() []byte {
+
+	const snapshotSizeOverhead = 1 // opcode's length
+	snapshot := make([]byte, snapshotSizeOverhead+len(w.planes)*PlaneSnapshotSize)
+	offset := snapshotSizeOverhead
+
+	for _, plane := range w.planes {
+		plane.Read(snapshot[offset:])
+		offset += PlaneSnapshotSize
+	}
+	return snapshot
+}
+
+// Run starts and run the world
+func (w *World) Run(simulationInterval time.Duration, snapshotInterval time.Duration) {
+
+	simulationTimer := time.Tick(simulationInterval)
+	snapshotTimer := time.Tick(snapshotInterval)
+	lastTick := time.Now()
+
+	for {
+
+		select {
+		case <-w.End:
+			log.Println("STOP!")
+			return
+		case <-snapshotTimer:
+			w.Snapshots <- w.generateSnapshots()
+		case now := <-simulationTimer:
+			lastTick = w.updateWorld(now.Sub(lastTick).Seconds())
+		case input := <-w.Input:
+			w.applyInput(&input)
+		case bullet := <-w.gun:
+			w.addBullet(&bullet)
+		case plane := <-w.Join:
+			w.addPlane(plane.UID, plane.Model, w.gun)
 		}
 
-		state.Planes = append(state.Planes, plane.Tick(deltaT, &w.terrain))
 	}
-
-	return state
 }

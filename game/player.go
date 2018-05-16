@@ -9,10 +9,11 @@ import (
 
 // Player : connected player's informations
 type Player struct {
-	conn    *websocket.Conn
-	send    chan []byte
-	input   chan world.PlaneInput
-	profile PlayerProfile
+	conn      *websocket.Conn
+	send      chan []byte
+	input     chan world.PlayerInput
+	deconnect chan *Player
+	profile   PlayerProfile
 }
 
 // NewPlayer returns a new player
@@ -21,62 +22,54 @@ func NewPlayer(profile PlayerProfile, conn *websocket.Conn, deconect chan *Playe
 	player = &Player{
 		conn:    conn,
 		send:    make(chan []byte, 2),
-		input:   make(chan world.PlaneInput),
+		input:   make(chan world.PlayerInput),
 		profile: profile,
 	}
-
-	go player.readPump(deconect)
-	go player.writePump(deconect)
-
+	go player.readPump()
 	return player
 }
 
-func (p *Player) readPump(deconect chan *Player) {
+func (p *Player) readPump() {
 
 	for {
 		_, message, err := p.conn.ReadMessage()
 
 		if err != nil {
+
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
 
+		// Check the opcode
 		switch message[0] {
 		case 0x3:
-			if len(message) == 5 { // 0x3|Roll|Pitch|Yaw|Thrust
-				// convert binary message to PlaneInput
-				p.input <- world.PlaneInput{
-					Roll:   -float64(int8(message[1])) / 127,
-					Pitch:  float64(int8(message[2])) / 127,
-					Yaw:    float64(int8(message[3])) / 127,
-					Thrust: float64(uint8(message[4])) / 255,
-				}
-
-			}
+			p.input <- world.PlayerInput{UID: p.profile.UID, Data: message}
 		}
-
 	}
-
-	deconect <- p
-
+	p.deconnect <- p
 }
 
-func (p *Player) writePump(deconect chan *Player) {
+// Close disconnect the player properly
+func (p *Player) Close() {
+	p.conn.Close()
+}
 
-	for message := range p.send {
+// Write
+func (p *Player) Write(message []byte) (n int, err error) {
+	w, err := p.conn.NextWriter(websocket.BinaryMessage)
 
-		w, err := p.conn.NextWriter(websocket.BinaryMessage)
-		if err != nil {
-			return
-		}
+	if err != nil {
+		p.deconnect <- p
+		return 0, err
+	}
+	w.Write(message)
 
-		w.Write(message)
-
-		if err := w.Close(); err != nil {
-			return
-		}
+	if err := w.Close(); err != nil {
+		p.deconnect <- p
+		return 0, err
 	}
 
+	return len(message), nil
 }
