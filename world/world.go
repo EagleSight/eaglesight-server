@@ -85,7 +85,7 @@ func (w *World) applyInput(input *PlayerInput) {
 }
 
 // updateWorld updates the states of all the entities in the world
-func (w *World) updateWorld(deltaT float64) time.Time {
+func (w *World) updateWorld(deltaT float64) {
 
 	bulletsStillAlive := []*Bullet{}
 
@@ -103,7 +103,6 @@ func (w *World) updateWorld(deltaT float64) time.Time {
 	for _, plane := range w.planes {
 		plane.Update(deltaT, w.terrain)
 	}
-	return time.Now()
 }
 
 func (w *World) removePlane(uid uint8) {
@@ -118,7 +117,7 @@ func (w *World) generateSnapshots() []byte {
 
 	const snapshotSizeOverhead = 1 // opcode's length
 	snapshot := make([]byte, snapshotSizeOverhead+len(w.planes)*PlaneSnapshotSize)
-	log.Println(snapshot)
+	//log.Println(snapshot)
 	offset := snapshotSizeOverhead
 
 	for _, plane := range w.planes {
@@ -144,7 +143,8 @@ func (w *World) Run(simulationInterval time.Duration, snapshotInterval time.Dura
 		case <-snapshotTimer:
 			w.Snapshots <- w.generateSnapshots()
 		case now := <-simulationTimer:
-			lastTick = w.updateWorld(now.Sub(lastTick).Seconds())
+			w.updateWorld(now.Sub(lastTick).Seconds())
+			lastTick = now
 		case input := <-w.Input:
 			w.applyInput(&input)
 		case bullet := <-w.gun:

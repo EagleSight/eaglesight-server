@@ -21,7 +21,8 @@ func TestMatrix3Inv(t *testing.T) {
 	m._32 = 3
 	m._33 = 1
 
-	inverse := m.GetInverse()
+	inverse := NewMatrix3()
+	m.Inverse(&inverse)
 
 	var truth Matrix3
 

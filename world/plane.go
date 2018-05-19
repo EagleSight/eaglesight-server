@@ -2,7 +2,6 @@ package world
 
 import (
 	"encoding/binary"
-	"log"
 	"math"
 
 	"github.com/eaglesight/eaglesight-backend/mathutils"
@@ -32,14 +31,15 @@ type PlaneModel struct {
 
 // Plane describe a plane with all its properties
 type Plane struct {
-	UID         uint8
-	input       PlaneInput
-	model       PlaneModel
-	location    mathutils.Vector3D // Absolute Location in the world
-	speed       mathutils.Vector3D // unit / seconds
-	orientation mathutils.Matrix3
-	isNoMore    bool
-	gun         chan<- Bullet
+	UID                uint8
+	input              PlaneInput
+	model              PlaneModel
+	location           mathutils.Vector3D // Absolute Location in the world
+	speed              mathutils.Vector3D // unit / seconds
+	orientation        mathutils.Matrix3
+	orientationInverse mathutils.Matrix3
+	isNoMore           bool
+	gun                chan<- Bullet
 }
 
 // NewPlane fill the plane with its default properties
@@ -142,7 +142,6 @@ func (p *Plane) calculateSpeed(deltaT float64) mathutils.Vector3D {
 	localAcceleration = localAcceleration.Add(localDrag)
 	// Convert to global
 	globalAcceleration := localAcceleration.MultiplyByMatrix3(&p.orientation)
-	log.Println("Global Acceleration Y:", globalAcceleration.Y)
 	// Apply gravity
 	globalAcceleration.Y += -9.8
 	return p.speed.Add(globalAcceleration.MulScalar(deltaT))
@@ -197,8 +196,8 @@ func (p *Plane) CorrectFromCollision(terrain *Terrain) {
 }
 
 func (p *Plane) getLocalSpeed() mathutils.Vector3D {
-
-	return p.speed.MultiplyByMatrix3(p.orientation.GetInverse())
+	p.orientation.Inverse(&p.orientationInverse)
+	return p.speed.MultiplyByMatrix3(&p.orientationInverse)
 }
 
 // getAirDensity returns the air density at the current altitude

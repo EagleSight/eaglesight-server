@@ -14,7 +14,8 @@ func TestMultiplyByMatrix3(t *testing.T) {
 	localRotMat := yawMat.Mul(pitchMat)
 	localRotMat = rollMat.Mul(localRotMat)
 
-	localRotMat = *localRotMat.GetInverse()
+	inverse := NewMatrix3()
+	localRotMat.Inverse(&inverse)
 
 	rotMat := localRotMat.Mul(localRotMat)
 

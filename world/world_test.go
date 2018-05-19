@@ -19,10 +19,10 @@ func getTestWorld() *World {
 func TestNewWorld(t *testing.T) {
 
 	w := getTestWorld()
-	log.Print("world created")
+	//log.Print("world created")
 	go func(world *World) {
 		time.Sleep(time.Second)
-		log.Print("Should end now")
+		//log.Print("Should end now")
 		w.End <- false
 	}(w)
 
@@ -61,5 +61,23 @@ func TestAddPlane(t *testing.T) {
 
 	if !w.planes[1].input.IsFiring {
 		t.Fail()
+	}
+}
+
+func BenchmarkXPlayers(b *testing.B) {
+	w := getTestWorld()
+	const X = 1
+
+	for i := 1; i <= X; i++ {
+		w.addPlane(uint8(i), PlaneModel{}, w.gun)
+	}
+	deltaT := float64(time.Second / 20)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w.updateWorld(deltaT)
+		if i%20 == 0 {
+			w.generateSnapshots()
+		}
 	}
 }

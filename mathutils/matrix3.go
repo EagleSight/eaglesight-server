@@ -25,14 +25,13 @@ func NewMatrix3() Matrix3 {
 	}
 }
 
-// GetInverse return the inverse of a Matrix3
-func (m *Matrix3) GetInverse() *Matrix3 {
+// Inverse put the inverse of m into n
+func (m *Matrix3) Inverse(n *Matrix3) {
 
-	n := *m
-	t11 := n._33*n._22 - n._23*n._32
-	t12 := n._23*n._31 - n._33*n._21
-	t13 := n._32*n._21 - n._22*n._31
-	det := n._11*t11 + n._12*t12 + n._13*t13
+	t11 := m._33*m._22 - m._23*m._32
+	t12 := m._23*m._31 - m._33*m._21
+	t13 := m._32*m._21 - m._22*m._31
+	det := m._11*t11 + m._12*t12 + m._13*t13
 
 	if det == 0 {
 		// Return the identity
@@ -45,7 +44,6 @@ func (m *Matrix3) GetInverse() *Matrix3 {
 		n._31 = 0
 		n._32 = 0
 		n._33 = 1
-		return &n
 	}
 	// Inverse the determinant
 	detInv := 1 / det
@@ -58,7 +56,6 @@ func (m *Matrix3) GetInverse() *Matrix3 {
 	n._31 = t13 * detInv
 	n._32 = (m._12*m._31 - m._32*m._11) * detInv
 	n._33 = (m._22*m._11 - m._12*m._21) * detInv
-	return &n
 }
 
 // MakeMatrix3X generate the X component of a rotation matrix
