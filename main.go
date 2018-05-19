@@ -1,19 +1,17 @@
 package main
 
 import (
-	"flag"
-
 	"github.com/eaglesight/eaglesight-backend/game"
+	"github.com/eaglesight/eaglesight-backend/world"
+	"github.com/eaglesight/eaglesight-backend/wsconnector"
 )
 
 func main() {
-	masterURL := flag.String("master_url", "", "Master's URL. Leave empty to run in 'local' mode")
-	secret := flag.String("secret", "", "Secret to include in the request")
-	master, _ := game.NewMaster(*masterURL, *secret)
 	params := game.LoadGameParametersFromFile()
+	terrain, _ := world.LoadTerrain("./map.esmap")
+	world := world.NewWorld(terrain)
+
 	server := game.NewServer(params)
-	master.Ready()
-	server.Run()
-	// Tell the master to stop this server
-	master.Stop()
+	wsconn := &wsconnector.Connector{}
+	server.Run(world, wsconn)
 }

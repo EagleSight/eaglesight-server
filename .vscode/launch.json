@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch file",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/eaglesight-backend"
+        },
+        {
             "name": "Launch",
             "type": "go",
             "request": "launch",

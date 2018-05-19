@@ -10,7 +10,7 @@ import (
 
 const (
 	// PlaneSnapshotSize : uint8 (planeId) + float32 * 3 (rotation) + float32 * 3 (location) + 1 bit for firing + 7 bits damage
-	PlaneSnapshotSize = 1 + 4*3*2 + 1
+	PlaneSnapshotSize = 1 + 1 + (4*3)*2
 )
 
 // PlaneInput ...
@@ -28,13 +28,6 @@ type PlaneModel struct {
 	LiftMin      float64            `json:"liftMin"`
 	LiftMax      float64            `json:"liftMax"`
 	DefaultSpeed float64            `json:"defaultSpeed"` // Default speed of the plane on the Z axis
-}
-
-// PlaneState reperent the LocRot of a plane
-type PlaneState struct {
-	UID      uint8
-	Location mathutils.Vector3D // Absolute Location in the world
-	Rotation mathutils.Vector3D // Absolute rotation of the plane (Radians, Euler's angles)
 }
 
 // Plane describe a plane with all its properties
@@ -102,14 +95,14 @@ func (p *Plane) Read(snapshot []byte) (n int, err error) {
 	// TODO: Dammage
 	snapshot[1] = 0
 	// Location
-	binary.BigEndian.PutUint32(snapshot[3:], math.Float32bits(float32(p.location.X)))
-	binary.BigEndian.PutUint32(snapshot[7:], math.Float32bits(float32(p.location.Y)))
-	binary.BigEndian.PutUint32(snapshot[11:], math.Float32bits(float32(p.location.Z)))
+	binary.BigEndian.PutUint32(snapshot[2:], math.Float32bits(float32(p.location.X)))
+	binary.BigEndian.PutUint32(snapshot[6:], math.Float32bits(float32(p.location.Y)))
+	binary.BigEndian.PutUint32(snapshot[10:], math.Float32bits(float32(p.location.Z)))
 	rotation := p.orientation.ToEulerAngle()
 	// Rotation
-	binary.BigEndian.PutUint32(snapshot[15:], math.Float32bits(float32(rotation.X)))
-	binary.BigEndian.PutUint32(snapshot[19:], math.Float32bits(float32(rotation.Y)))
-	binary.BigEndian.PutUint32(snapshot[23:], math.Float32bits(float32(rotation.Z)))
+	binary.BigEndian.PutUint32(snapshot[14:], math.Float32bits(float32(rotation.X)))
+	binary.BigEndian.PutUint32(snapshot[18:], math.Float32bits(float32(rotation.Y)))
+	binary.BigEndian.PutUint32(snapshot[22:], math.Float32bits(float32(rotation.Z)))
 	return PlaneSnapshotSize, nil
 }
 

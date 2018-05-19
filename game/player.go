@@ -32,35 +32,33 @@ func NewPlayer(profile PlayerProfile, conn PlayerConn, deconect chan *Player) (p
 
 	player = &Player{
 		conn:      conn,
-		input:     make(chan world.PlayerInput),
 		deconnect: make(chan *Player),
 		profile:   profile,
 	}
-	go player.listen()
 	return player
 }
 
-func (p *Player) listen() {
+// Listen starts the loop of the player
+func (p *Player) Listen(input chan world.PlayerInput) {
 
 	for {
 		message, err := p.conn.Receive()
 
 		if err != nil {
-			p.Close()
+			p.deconnect <- p
 			break
 		}
 
 		// Check the opcode
 		switch message[0] {
 		case 0x3:
-			p.input <- world.PlayerInput{UID: p.profile.UID, Data: message}
+			input <- world.PlayerInput{UID: p.profile.UID, Data: message}
 		}
 	}
 }
 
 // Close disconnect the player properly
 func (p *Player) Close() error {
-	p.deconnect <- p
 	return p.conn.Close()
 }
 
@@ -69,7 +67,7 @@ func (p *Player) Write(message []byte) (n int, err error) {
 	err = p.conn.Send(message)
 
 	if err != nil {
-		p.Close()
+		p.deconnect <- p
 		return 0, err
 	}
 	return len(message), nil

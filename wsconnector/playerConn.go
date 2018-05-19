@@ -26,8 +26,8 @@ func (c *WsPlayerConn) Receive() (data []byte, err error) {
 	return message, err
 }
 
-// Write ...
-func (c *WsPlayerConn) Write(message []byte) error {
+// Send ...
+func (c *WsPlayerConn) Send(message []byte) error {
 
 	w, err := c.conn.NextWriter(websocket.BinaryMessage)
 

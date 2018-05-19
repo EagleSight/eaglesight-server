@@ -52,5 +52,5 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, server *game.Serve
 	log.Printf("Connection upgraded for %s\n", uuid)
 
 	// Connect the player
-	server.Connect(WsPlayerConn{conn: conn}, profile)
+	server.Connect(&WsPlayerConn{conn: conn}, profile)
 }

@@ -32,7 +32,8 @@ func NewBullet(source uint8, origin mathutils.Vector3D, direction *mathutils.Mat
 func (b *Bullet) Update(deltaT float64) bool {
 
 	// Apply some gravity
-	b.speed.Add(mathutils.Vector3D{X: 0, Y: 9.8 * deltaT, Z: 0})
+	b.speed = b.speed.Add(mathutils.Vector3D{X: 0, Y: -9.8 * deltaT, Z: 0})
+	b.location = b.location.Add(b.speed)
 	// One tick closer to death...
 	b.ticksToLive--
 	return b.ticksToLive > 0
