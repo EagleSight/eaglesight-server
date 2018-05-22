@@ -133,3 +133,35 @@ func (m *Matrix3) ToEulerAngle() (v Vector3D) {
 	}
 	return v
 }
+
+// ToQuaternion convert a rotation matrix3 to quaternion
+func (m *Matrix3) ToQuaternion() (q Quaternion) {
+	tr := m._11 + m._22 + m._33
+
+	if tr > 0 {
+		S := math.Sqrt(tr+1.0) * 2 // S=4*qw
+		q.W = 0.25 * S
+		q.X = (m._32 - m._23) / S
+		q.Y = (m._13 - m._31) / S
+		q.Z = (m._21 - m._12) / S
+	} else if (m._11 > m._22) && (m._11 > m._33) {
+		S := math.Sqrt(1.0+m._11-m._22-m._33) * 2 // S=4*q.X
+		q.W = (m._32 - m._23) / S
+		q.X = 0.25 * S
+		q.Y = (m._12 + m._21) / S
+		q.Z = (m._13 + m._31) / S
+	} else if m._22 > m._33 {
+		S := math.Sqrt(1.0+m._22-m._11-m._33) * 2 // S=4*q.Y
+		q.W = (m._13 - m._31) / S
+		q.X = (m._12 + m._21) / S
+		q.Y = 0.25 * S
+		q.Z = (m._23 + m._32) / S
+	} else {
+		S := math.Sqrt(1.0+m._33-m._11-m._22) * 2 // S=4*q.Z
+		q.W = (m._21 - m._12) / S
+		q.X = (m._13 + m._31) / S
+		q.Y = (m._23 + m._32) / S
+		q.Z = 0.25 * S
+	}
+	return
+}

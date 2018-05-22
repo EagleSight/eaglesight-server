@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	// PlaneSnapshotSize : uint8 (planeId) + float32 * 3 (rotation) + float32 * 3 (location) + 1 bit for firing + 7 bits damage
-	PlaneSnapshotSize = 1 + 1 + (4*3)*2
+	// PlaneSnapshotSize : uint8 (planeId) + float32 * 3 (location) + float32 * 4 (rotation) + 1 bit for firing + 7 bits damage
+	PlaneSnapshotSize = 1 + 1 + (3 * 4) + (4 * 4)
 )
 
 // PlaneInput ...
@@ -98,11 +98,12 @@ func (p *Plane) Read(snapshot []byte) (n int, err error) {
 	binary.BigEndian.PutUint32(snapshot[2:], math.Float32bits(float32(p.location.X)))
 	binary.BigEndian.PutUint32(snapshot[6:], math.Float32bits(float32(p.location.Y)))
 	binary.BigEndian.PutUint32(snapshot[10:], math.Float32bits(float32(p.location.Z)))
-	rotation := p.orientation.ToEulerAngle()
 	// Rotation
+	rotation := p.orientation.ToQuaternion()
 	binary.BigEndian.PutUint32(snapshot[14:], math.Float32bits(float32(rotation.X)))
 	binary.BigEndian.PutUint32(snapshot[18:], math.Float32bits(float32(rotation.Y)))
 	binary.BigEndian.PutUint32(snapshot[22:], math.Float32bits(float32(rotation.Z)))
+	binary.BigEndian.PutUint32(snapshot[26:], math.Float32bits(float32(rotation.W)))
 	return PlaneSnapshotSize, nil
 }
 

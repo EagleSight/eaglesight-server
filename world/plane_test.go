@@ -61,7 +61,7 @@ func TestSnapshot(t *testing.T) {
 		t.Fail()
 	}
 
-	rot := plane.orientation.ToEulerAngle()
+	rot := plane.orientation.ToQuaternion()
 
 	// Rotation
 	if math.Float32frombits(binary.BigEndian.Uint32(snap[14:18])) != float32(rot.X) {
@@ -73,6 +73,10 @@ func TestSnapshot(t *testing.T) {
 	}
 
 	if math.Float32frombits(binary.BigEndian.Uint32(snap[22:26])) != float32(rot.Z) {
+		t.Fail()
+	}
+
+	if math.Float32frombits(binary.BigEndian.Uint32(snap[26:30])) != float32(rot.W) {
 		t.Fail()
 	}
 }
