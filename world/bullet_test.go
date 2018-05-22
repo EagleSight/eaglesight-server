@@ -30,12 +30,12 @@ func TestBulletUpdate(t *testing.T) {
 	bullet := NewBullet(3, origin, &direction, 400, 12)
 
 	if bullet.location.Y != 0 {
-		t.Errorf("Bullet's location is %s", bullet.location)
+		t.Errorf("Bullet's location is %+v", bullet.location)
 	}
 
 	bullet.Update(1)
 
 	if bullet.location.Y == 0 {
-		t.Errorf("Bullet's location is %s", bullet.location)
+		t.Errorf("Bullet's location is %+v", bullet.location)
 	}
 }
