@@ -19,7 +19,11 @@ func (c *Connector) Start(server *game.Server) error {
 		webSocketHandler(w, r, server)
 	})
 
+	log.Println("Listening on websocket port 8000")
 	err := http.ListenAndServe("0.0.0.0:8000", nil)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	return err
 }
 

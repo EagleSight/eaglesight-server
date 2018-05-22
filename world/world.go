@@ -34,14 +34,14 @@ func NewWorld(terrain *Terrain) *World {
 		terrain:   terrain,
 		planes:    make(map[uint8]*Plane),
 		Snapshots: make(chan []byte, 1),
-		Input:     make(chan PlayerInput),
+		Input:     make(chan PlayerInput, 1),
 		join: make(chan struct {
 			UID   uint8
 			Model PlaneModel
-		}),
-		leave:   make(chan uint8),
+		}, 1),
+		leave:   make(chan uint8, 1),
 		End:     make(chan bool),
-		gun:     make(chan Bullet),
+		gun:     make(chan Bullet, 1),
 		bullets: []*Bullet{},
 	}
 	return world
@@ -117,6 +117,7 @@ func (w *World) generateSnapshots() []byte {
 
 	const snapshotSizeOverhead = 1 // opcode's length
 	snapshot := make([]byte, snapshotSizeOverhead+len(w.planes)*PlaneSnapshotSize)
+	snapshot[0] = 0x3
 	//log.Println(snapshot)
 	offset := snapshotSizeOverhead
 
@@ -150,8 +151,10 @@ func (w *World) Run(simulationInterval time.Duration, snapshotInterval time.Dura
 		case bullet := <-w.gun:
 			w.addBullet(&bullet)
 		case plane := <-w.join:
+			log.Println("Plane joining")
 			w.addPlane(plane.UID, plane.Model, w.gun)
 		case uid := <-w.leave:
+			log.Println("Plane leaving")
 			w.removePlane(uid)
 		}
 
