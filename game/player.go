@@ -3,7 +3,7 @@ package game
 import (
 	"log"
 
-	"github.com/eaglesight/eaglesight-backend/world"
+	"github.com/eaglesight/eaglesight-server/world"
 )
 
 // Player : connected player's informations
@@ -68,7 +68,7 @@ func (p *Player) Write(message []byte) (n int, err error) {
 	err = p.conn.Send(message)
 
 	if err != nil {
-		log.Println("Player.Write (", Player.profile.Name, "): ", err)
+		log.Println("Player.Write (", p.profile.Name, "): ", err)
 		return 0, err
 	}
 	return len(message), nil

@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/eaglesight/eaglesight-backend/world"
+	"github.com/eaglesight/eaglesight-server/world"
 )
 
 // Server ...

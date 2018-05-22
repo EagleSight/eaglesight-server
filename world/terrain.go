@@ -6,7 +6,7 @@ import (
 	"math"
 	"os"
 
-	"github.com/eaglesight/eaglesight-backend/mathutils"
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 // Terrain ...

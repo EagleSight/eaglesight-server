@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/eaglesight/eaglesight-backend/mathutils"
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 const (

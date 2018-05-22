@@ -1,7 +1,7 @@
 package world
 
 import (
-	"github.com/eaglesight/eaglesight-backend/mathutils"
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 // Bullet represent a bullet

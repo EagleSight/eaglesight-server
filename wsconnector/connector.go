@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/eaglesight/eaglesight-backend/game"
+	"github.com/eaglesight/eaglesight-server/game"
 	"github.com/gorilla/websocket"
 )
 

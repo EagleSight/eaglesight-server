@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/eaglesight/eaglesight-backend/game"
-	"github.com/eaglesight/eaglesight-backend/world"
-	"github.com/eaglesight/eaglesight-backend/wsconnector"
+	"github.com/eaglesight/eaglesight-server/game"
+	"github.com/eaglesight/eaglesight-server/world"
+	"github.com/eaglesight/eaglesight-server/wsconnector"
 )
 
 func main() {
