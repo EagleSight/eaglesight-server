@@ -118,7 +118,6 @@ func (w *World) generateSnapshots() []byte {
 	const snapshotSizeOverhead = 1 // opcode's length
 	snapshot := make([]byte, snapshotSizeOverhead+len(w.planes)*PlaneSnapshotSize)
 	snapshot[0] = 0x3
-	//log.Println(snapshot)
 	offset := snapshotSizeOverhead
 
 	for _, plane := range w.planes {
