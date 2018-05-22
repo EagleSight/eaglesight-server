@@ -76,7 +76,7 @@ func BenchmarkXPlayers(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		w.updateWorld(deltaT)
-		if i%20 == 0 {
+		if i%5 == 0 {
 			w.generateSnapshots()
 		}
 	}

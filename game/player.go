@@ -1,15 +1,15 @@
 package game
 
 import (
+	"log"
+
 	"github.com/eaglesight/eaglesight-backend/world"
 )
 
 // Player : connected player's informations
 type Player struct {
-	conn      PlayerConn
-	input     chan world.PlayerInput
-	deconnect chan *Player
-	profile   PlayerProfile
+	conn    PlayerConn
+	profile PlayerProfile
 }
 
 // PlayerProfile ...
@@ -28,24 +28,22 @@ type PlayerConn interface {
 }
 
 // NewPlayer returns a new player
-func NewPlayer(profile PlayerProfile, conn PlayerConn, deconect chan *Player) (player *Player) {
+func NewPlayer(profile PlayerProfile, conn PlayerConn) (player *Player) {
 
 	player = &Player{
-		conn:      conn,
-		deconnect: make(chan *Player),
-		profile:   profile,
+		conn:    conn,
+		profile: profile,
 	}
 	return player
 }
 
 // Listen starts the loop of the player
-func (p *Player) Listen(input chan world.PlayerInput) {
+func (p *Player) Listen(input chan world.PlayerInput, exit chan *Player) (err error) {
 
 	for {
 		message, err := p.conn.Receive()
 
 		if err != nil {
-			p.deconnect <- p
 			break
 		}
 
@@ -55,10 +53,13 @@ func (p *Player) Listen(input chan world.PlayerInput) {
 			input <- world.PlayerInput{UID: p.profile.UID, Data: message}
 		}
 	}
+	exit <- p
+	return err
 }
 
 // Close disconnect the player properly
 func (p *Player) Close() error {
+	log.Println(p.profile.Name, " is gone.")
 	return p.conn.Close()
 }
 
@@ -67,7 +68,7 @@ func (p *Player) Write(message []byte) (n int, err error) {
 	err = p.conn.Send(message)
 
 	if err != nil {
-		p.deconnect <- p
+		log.Println("Player.Write (", Player.profile.Name, "): ", err)
 		return 0, err
 	}
 	return len(message), nil

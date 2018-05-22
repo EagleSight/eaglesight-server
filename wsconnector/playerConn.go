@@ -1,6 +1,7 @@
 package wsconnector
 
 import (
+	"errors"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -21,7 +22,7 @@ func (c *WsPlayerConn) Receive() (data []byte, err error) {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 			log.Printf("error: %v", err)
 		}
-		return []byte{}, nil
+		return nil, errors.New("Connection closed")
 	}
 	return message, err
 }

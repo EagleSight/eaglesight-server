@@ -72,22 +72,27 @@ func (s *Server) verify(request *verificationRequest) {
 
 // Connect add a player to the server
 func (s *Server) Connect(conn PlayerConn, profile PlayerProfile) {
-	s.connect <- NewPlayer(profile, conn, s.deconnect)
+	s.connect <- NewPlayer(profile, conn)
 }
 
 // Run start the server
 func (s *Server) Run(world *world.World, connectors ...Connector) {
 
+	log.Println("Run...")
+
 	if len(connectors) == 0 {
 		log.Fatalln("No connectors loaded.")
 	}
 
-	go world.Run(time.Second/100, time.Second/30)
+	log.Println("Starting world...")
+	go world.Run(time.Second/100, time.Second/20)
 
+	log.Println("Starting connectors...")
 	for _, connector := range connectors {
 		go connector.Start(s)
 	}
 
+	log.Println("Here we go!")
 	for {
 		select {
 		case snapshot := <-world.Snapshots:
@@ -95,7 +100,7 @@ func (s *Server) Run(world *world.World, connectors ...Connector) {
 		case request := <-s.verification:
 			s.verify(&request)
 		case player := <-s.connect:
-			go player.Listen(world.Input)
+			go player.Listen(world.Input, s.deconnect)
 			world.Join(player.profile.UID, player.profile.Model)
 			s.connectPlayer(player)
 		case player := <-s.deconnect:
