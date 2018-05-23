@@ -3,7 +3,7 @@ package game
 import (
 	"testing"
 
-	"github.com/eaglesight/eaglesight-backend/world"
+	"github.com/eaglesight/eaglesight-server/world"
 )
 
 func dummyParams() (params Parameters) {
@@ -104,7 +104,7 @@ func TestBroadcastMessage(t *testing.T) {
 
 	conn := dummyConn()
 
-	server.connectedPlayers[profile.UID] = NewPlayer(profile, conn, server.deconnect)
+	server.connectedPlayers[profile.UID] = NewPlayer(profile, conn)
 
 	server.broadcastMessage(message)
 
@@ -120,7 +120,7 @@ func TestPlayersListMessage(t *testing.T) {
 	server := dummyServer()
 	conn := dummyConn()
 	profile := server.profiles["pako"]
-	server.connectedPlayers[profile.UID] = NewPlayer(profile, conn, server.deconnect)
+	server.connectedPlayers[profile.UID] = NewPlayer(profile, conn)
 
 	list := server.playersListMessage(1)
 
@@ -153,7 +153,7 @@ func TestConnectPlayer(t *testing.T) {
 	conn := dummyConn()
 
 	profile := server.profiles["pako"]
-	player := NewPlayer(profile, conn, server.deconnect)
+	player := NewPlayer(profile, conn)
 
 	server.connectPlayer(player)
 
@@ -169,7 +169,7 @@ func TestDeconnectPlayer(t *testing.T) {
 	conn := dummyConn()
 
 	profile := server.profiles["pako"]
-	player := NewPlayer(profile, conn, server.deconnect)
+	player := NewPlayer(profile, conn)
 
 	server.connectPlayer(player)
 

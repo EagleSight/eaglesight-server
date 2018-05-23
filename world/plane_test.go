@@ -5,7 +5,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/eaglesight/eaglesight-backend/mathutils"
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 func dummyPlane(uid uint8) *Plane {

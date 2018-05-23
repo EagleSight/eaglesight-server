@@ -3,7 +3,7 @@ package world
 import (
 	"testing"
 
-	"github.com/eaglesight/eaglesight-backend/mathutils"
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 func TestNewBullet(t *testing.T) {
