@@ -42,8 +42,8 @@
                     "y": 0.04,
                     "z": 0.04
                 },
-                "liftMin": 0.5,
-                "liftMax": 5,
+                "liftMin": 10,
+                "liftMax": 100,
                 "defaultSpeed": 150
             }
         }
