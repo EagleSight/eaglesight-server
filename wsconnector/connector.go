@@ -3,6 +3,7 @@ package wsconnector
 import (
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/eaglesight/eaglesight-server/game"
 	"github.com/gorilla/websocket"
@@ -10,6 +11,14 @@ import (
 
 // Connector is a websocket connector for the "game" package
 type Connector struct {
+	port string
+}
+
+// NewConnector return a new connector
+func NewConnector(port uint16) *Connector {
+	return &Connector{
+		port: strconv.Itoa(int(port)),
+	}
 }
 
 // Start and initialize the connector
@@ -19,8 +28,9 @@ func (c *Connector) Start(server *game.Server) error {
 		webSocketHandler(w, r, server)
 	})
 
-	log.Println("Listening on websocket port 8000")
-	err := http.ListenAndServe("0.0.0.0:8000", nil)
+	log.Println("Listening on websocket port:", c.port)
+	err := http.ListenAndServe("0.0.0.0:"+c.port, nil)
+
 	if err != nil {
 		log.Fatalln(err)
 	}

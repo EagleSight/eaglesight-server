@@ -11,13 +11,16 @@ import (
 func main() {
 
 	terrainLocation := flag.String("map", "./map.esmap", ".esmap file location")
-	configFileLocation := flag.String("conf", "./game.json", "config of the game")
+	paramsFileLocation := flag.String("conf", "./game.json", "config of the game")
+	wsport := flag.Uint("wsport", 8000, "Port on which the websocket's server will listen")
 
-	params := game.LoadGameParametersFromFile(*configFileLocation)
+	flag.Parse()
+
+	params := game.LoadGameParametersFromFile(*paramsFileLocation)
 	terrain, _ := world.LoadTerrain(*terrainLocation)
 	world := world.NewWorld(terrain)
 
 	server := game.NewServer(params)
-	wsconn := &wsconnector.Connector{}
+	wsconn := wsconnector.NewConnector(uint16(*wsport))
 	server.Run(world, wsconn)
 }
