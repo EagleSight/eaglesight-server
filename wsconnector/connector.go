@@ -47,7 +47,6 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, server *game.Serve
 	r.Header.Del("Origin")
 	// Retrive the "uuid" params from the URL
 	uuid := r.FormValue("uuid")
-
 	profile, err := server.Verify(uuid)
 
 	// Something happened while retriving the profile's infos
@@ -64,7 +63,6 @@ func webSocketHandler(w http.ResponseWriter, r *http.Request, server *game.Serve
 		return
 	}
 	log.Printf("Connection upgraded for %s\n", uuid)
-
 	// Connect the player
 	server.Connect(&WsPlayerConn{conn: conn}, profile)
 }

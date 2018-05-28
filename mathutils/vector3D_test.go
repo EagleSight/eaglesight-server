@@ -20,11 +20,8 @@ func TestMultiplyByMatrix3(t *testing.T) {
 	rotMat := localRotMat.Mul(localRotMat)
 
 	rotMat = rotMat.Mul(orientation)
-
 	//v := Vector3D{0, 0, 1}
-
 	//	r := v.multiplyByMatrix3(&localRotMat)
-
 }
 
 func TestHeightOnTriangle(t *testing.T) {

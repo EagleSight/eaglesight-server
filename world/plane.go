@@ -27,6 +27,7 @@ type PlaneModel struct {
 	LiftMin      float64            `json:"liftMin"`
 	LiftMax      float64            `json:"liftMax"`
 	DefaultSpeed float64            `json:"defaultSpeed"` // Default speed of the plane on the Z axis
+	Life         uint8              `json:"life"`
 }
 
 // Plane describe a plane with all its properties
@@ -38,6 +39,7 @@ type Plane struct {
 	speed              mathutils.Vector3D // unit / seconds
 	orientation        mathutils.Matrix3
 	orientationInverse mathutils.Matrix3
+	life               uint8
 	isNoMore           bool
 	gun                chan<- Bullet
 }
@@ -66,6 +68,7 @@ func NewPlane(uid uint8, model PlaneModel, gun chan<- Bullet) (plane *Plane) {
 			Z: model.DefaultSpeed,
 		},
 		model:    model,
+		life:     model.Life,
 		isNoMore: false,
 		gun:      gun,
 	}
