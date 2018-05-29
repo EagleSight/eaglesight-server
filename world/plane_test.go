@@ -8,7 +8,7 @@ import (
 	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
-func dummyPlane(uid uint8) *Plane {
+func dummyPlane(uid uint8) (*Plane, chan *Bullet) {
 	model := PlaneModel{
 		MaxThrust: 50000,
 		Mass:      4000,
@@ -27,14 +27,14 @@ func dummyPlane(uid uint8) *Plane {
 		DefaultSpeed: 150,
 	}
 
-	gun := make(chan Bullet)
+	gun := make(chan *Bullet, 1)
 
-	return NewPlane(uid, model, gun)
+	return NewPlane(uid, model, gun), gun
 }
 
 func TestSnapshot(t *testing.T) {
 	var uid uint8 = 5
-	plane := dummyPlane(uid)
+	plane, _ := dummyPlane(uid)
 
 	plane.location.X = 32
 	plane.location.Y = 19
@@ -85,4 +85,18 @@ func TestGetAirDensity(t *testing.T) {
 	if getAirDensity(500) != 1.2 {
 		t.Fail()
 	}
+}
+
+func TestFire(t *testing.T) {
+
+	plane, gun := dummyPlane(3)
+
+	plane.fire()
+
+	bullet := <-gun
+
+	if bullet.speed.Y != 600 {
+		t.Fail()
+	}
+
 }

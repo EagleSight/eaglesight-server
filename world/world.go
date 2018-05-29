@@ -21,7 +21,7 @@ type World struct {
 	}
 	leave   chan uint8
 	End     chan bool // End the world
-	gun     chan Bullet
+	gun     chan *Bullet
 	terrain *Terrain
 	planes  map[uint8]*Plane
 	bullets []*Bullet
@@ -41,7 +41,7 @@ func NewWorld(terrain *Terrain) *World {
 		}, 1),
 		leave:   make(chan uint8, 1),
 		End:     make(chan bool),
-		gun:     make(chan Bullet, 1),
+		gun:     make(chan *Bullet, 1),
 		bullets: []*Bullet{},
 	}
 	return world
@@ -63,7 +63,7 @@ func (w *World) Leave(uid uint8) {
 }
 
 // addPlane add a plane to the world
-func (w *World) addPlane(uid uint8, model PlaneModel, gun chan<- Bullet) {
+func (w *World) addPlane(uid uint8, model PlaneModel, gun chan<- *Bullet) {
 	// Check if the plane already exists in the world
 	w.planes[uid] = NewPlane(uid, model, gun)
 }
@@ -148,7 +148,7 @@ func (w *World) Run(simulationInterval time.Duration, snapshotInterval time.Dura
 		case input := <-w.Input:
 			w.applyInput(&input)
 		case bullet := <-w.gun:
-			w.addBullet(&bullet)
+			w.addBullet(bullet)
 		case plane := <-w.join:
 			log.Println("Plane joining")
 			w.addPlane(plane.UID, plane.Model, w.gun)

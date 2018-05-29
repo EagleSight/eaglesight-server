@@ -4,6 +4,8 @@ import (
 	"log"
 	"testing"
 	"time"
+
+	"github.com/eaglesight/eaglesight-server/mathutils"
 )
 
 func getTestWorld() *World {
@@ -71,7 +73,7 @@ func BenchmarkXPlayers(b *testing.B) {
 	for i := 1; i <= X; i++ {
 		w.addPlane(uint8(i), PlaneModel{}, w.gun)
 	}
-	deltaT := float64(time.Second / 20)
+	deltaT := float64(time.Second / 100)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -79,5 +81,17 @@ func BenchmarkXPlayers(b *testing.B) {
 		if i%5 == 0 {
 			w.generateSnapshots()
 		}
+	}
+}
+
+func BenchmarkBullet(b *testing.B) {
+	m := mathutils.NewMatrix3()
+	bullet := NewBullet(2, mathutils.Vector3D{X: 0, Y: 0, Z: 0}, &m, 600, 5)
+
+	deltaT := float64(time.Second / 100)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		bullet.Update(deltaT)
 	}
 }

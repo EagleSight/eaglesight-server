@@ -41,11 +41,11 @@ type Plane struct {
 	orientationInverse mathutils.Matrix3
 	life               uint8
 	isNoMore           bool
-	gun                chan<- Bullet
+	gun                chan<- *Bullet
 }
 
 // NewPlane fill the plane with its default properties
-func NewPlane(uid uint8, model PlaneModel, gun chan<- Bullet) (plane *Plane) {
+func NewPlane(uid uint8, model PlaneModel, gun chan<- *Bullet) (plane *Plane) {
 
 	plane = &Plane{
 		UID: uid,
@@ -90,6 +90,11 @@ func (p *Plane) Write(data []byte) (n int, err error) {
 	}
 	// Nothing matched
 	return 0, nil
+}
+
+func (p *Plane) fire() {
+	// Some default settings here
+	p.gun <- NewBullet(p.UID, p.location, &p.orientation, 600, 10)
 }
 
 func (p *Plane) Read(snapshot []byte) (n int, err error) {
